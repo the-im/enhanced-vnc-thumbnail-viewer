@@ -41,3 +41,34 @@ that the timing is right, we are back on it once again!  And we also
 move the source code repository from SourceForge to GitHub too.
 
 Hello World.
+
+
+## How to compile
+
+change directory to `src` and run with command:
+
+for linux
+```
+javac -cp .:../lib/* *.java
+jar -cvfe ../EnhancedVncThumbnailViewer.jar EnhancedVncThumbnailViewer *.class
+```
+
+for windows
+```
+javac -cp .;../lib/* *.java
+jar -cvfe ../EnhancedVncThumbnailViewer.jar EnhancedVncThumbnailViewer *.class
+```
+
+## How to run
+
+change directory to `parent` and run with command:
+
+for linux
+```
+java -cp EnhancedVncThumbnailViewer.jar:lib/* EnhancedVncThumbnailViewer
+```
+
+for windows
+```
+java -cp EnhancedVncThumbnailViewer.jar;lib/* EnhancedVncThumbnailViewer
+```
