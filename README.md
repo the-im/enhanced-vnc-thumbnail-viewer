@@ -42,6 +42,9 @@ move the source code repository from SourceForge to GitHub too.
 
 Hello World.
 
+## Requirements
+
+- tested with: [jdk 1.8u121](http://www.oracle.com/technetwork/java/javase/downloads/java-archive-javase8-2177648.html)
 
 ## How to compile
 
