@@ -1,4 +1,7 @@
 /* *
+ * Enhanced VNC Thumbnail Viewer 1.003
+ *  - Changed message dialogs
+ * 
  * Enhanced VNC Thumbnail Viewer 1.002
  *  - Optimized code
  * 
@@ -82,7 +85,7 @@ public class LoginDialog extends JDialog implements ActionListener, KeyListener 
         if (checkPassword(usernameField.getText(), passwordField.getText())) {
             this.dispose();
         } else {
-            JOptionPane.showConfirmDialog(this, "Invalid Username/Password", "error", JOptionPane.DEFAULT_OPTION);
+            JOptionPane.showMessageDialog(this, "Invalid Username/Password", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 

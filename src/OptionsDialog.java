@@ -1,4 +1,7 @@
 /* *
+ * Enhanced VNC Thumbnail Viewer 1.003
+ *  - Added screen capture tab
+ * 
  * Enhanced VNC Thumbnail Viewer 1.002
  *  - Dialog for settings
  */
@@ -20,6 +23,10 @@ public class OptionsDialog extends JDialog implements ActionListener {
     private JCheckBox loginRememberCheckbox;
     private JButton okButton, cancelButton;
     
+    /* Added on evnctv 1.003 */
+    private JButton scSettingButton;
+    private JCheckBox scStartCaptureCheckbox;
+    
     public OptionsDialog(EnhancedVncThumbnailViewer tnviewer) {
         super(tnviewer, true);
         
@@ -31,6 +38,7 @@ public class OptionsDialog extends JDialog implements ActionListener {
         tabPane.addTab("Slideshow", getSlideshowTab());
         tabPane.addTab("Proxy", getProxyTab());
         tabPane.addTab("Login", getLoginTab());
+        tabPane.addTab("Screen Capture", getScreenCaptureTab());
         
         // Button section
         okButton = new JButton("OK");
@@ -136,10 +144,44 @@ public class OptionsDialog extends JDialog implements ActionListener {
         
         return panel;
     }
+    
+    /* *
+     * Added on evnctv 1.003
+     */
+    private JPanel getScreenCaptureTab() {
+        // Initial components
+        JLabel scSettingLabel = new JLabel("Automatic capture screen each viewer");
+        scSettingButton = new JButton("Setting...");
+        scStartCaptureCheckbox = new JCheckBox("Enable capture");
+        scStartCaptureCheckbox.setSelected(ScreenCaptureSetting.getIsEnable());
+                
+        scSettingButton.addActionListener(this);
+
+        // Panel
+        JPanel panel = new JPanel();
+        panel.add(scSettingLabel);
+        panel.add(scSettingButton);
+        panel.add(scStartCaptureCheckbox);
+        
+        // Layout
+        panel.setLayout(layout);
+        
+        layout.putConstraint(SpringLayout.WEST, scSettingLabel, PADDING, SpringLayout.WEST, panel);
+        layout.putConstraint(SpringLayout.NORTH, scSettingLabel, PADDING + 5, SpringLayout.NORTH, panel);
+        
+        layout.putConstraint(SpringLayout.EAST, scSettingButton, -PADDING, SpringLayout.EAST, panel);
+        layout.putConstraint(SpringLayout.NORTH, scSettingButton, PADDING, SpringLayout.NORTH, panel);
+        
+        layout.putConstraint(SpringLayout.WEST, scStartCaptureCheckbox, PADDING, SpringLayout.WEST, panel);
+        layout.putConstraint(SpringLayout.NORTH, scStartCaptureCheckbox, SPACING, SpringLayout.SOUTH, scSettingLabel);
+        
+        return panel;
+    }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == okButton) {
+            // Login
             if (LoginSetting.getIsRemember() != loginRememberCheckbox.isSelected()) {
                 LoginSetting.setIsRemember(loginRememberCheckbox.isSelected());
                 
@@ -147,6 +189,16 @@ public class OptionsDialog extends JDialog implements ActionListener {
                 RecentSettingsList.addRecent(new RecentSetting(msg, "Login"));
                 System.out.println(msg);
             }
+            
+            // Screen capture
+            else if (ScreenCaptureSetting.getIsEnable() != scStartCaptureCheckbox.isSelected()) {
+                ScreenCaptureSetting.setIsEnable(scStartCaptureCheckbox.isSelected());
+                
+                String msg = scStartCaptureCheckbox.isSelected() ? "Changed to enable capture" : "Changed to disable capture";
+                RecentSettingsList.addRecent(new RecentSetting(msg, "Screen Capture"));
+                System.out.println(msg);
+            }
+            
             this.dispose();
         } else if (e.getSource() == cancelButton) {
             this.dispose();
@@ -156,6 +208,8 @@ public class OptionsDialog extends JDialog implements ActionListener {
             new ProxySettingDialog(evnctv);
         } else if (e.getSource() == loginSettingButton) {
             new LoginSettingDialog(evnctv);
+        } else if (e.getSource() == scSettingButton) {
+            new ScreenCaptureSettingDialog(evnctv);
         }
     }
 }

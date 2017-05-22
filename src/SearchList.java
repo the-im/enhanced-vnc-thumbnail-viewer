@@ -1,9 +1,12 @@
 /* *
+ * Enhanced VNC Thumbnail Viewer 1.003
+ *  - Fixed searching by use no case-sensitive
+ * 
  * Enhanced VNC Thumbnail Viewer 1.000
  * Class for searching viewers in list
  */
 
-class SearchList{
+public class SearchList{
     VncViewersList viewersList, viewersSearchList;
     
     public SearchList(EnhancedVncThumbnailViewer v){
@@ -21,7 +24,7 @@ class SearchList{
             VncViewer v;
             for(int i = 0; i < viewersList.size(); i++){
                 v = (VncViewer) viewersList.get(i);
-                if(v.compname.contains(searchText)){
+                if(v.compname.toLowerCase().contains(searchText.toLowerCase())){
                     viewersSearchList.add(v);
                 }
             }        

@@ -5,7 +5,7 @@
  *  - Added static to attributes & methods
  *  - Added static final attributes
  * 
- * Enhanced VNC Thumbnail Viewer 1.0
+ * Enhanced VNC Thumbnail Viewer 1.000
  *  - Keep login data: username, password, on/off login on start up
  */
 

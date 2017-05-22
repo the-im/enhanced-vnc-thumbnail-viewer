@@ -17,19 +17,19 @@
 //  USA.
 //
 
-/*
+/* *
+ * Enhanced VNC Thumbnail Viewer 1.003
+ *  - Added method about screen capture feature
+ *
  * Enhanced VNC Thumbnail Viewer 1.001
- *      - Called proxy setting from Setting class
+ *  - Called proxy setting from Setting class
  * 
  * Enhanced VNC Thumbnail Viewer 1.0
- *      - New methods -> launchViewer()
+ *  - New methods -> launchViewer()
  */
 
 import java.awt.*;
-import java.io.*;
-import net.n3.nanoxml.*; // Source available at http://nanoxml.cyberelf.be/
 import java.util.*;
-import java.net.*;//TEMP
 
 //
 // This Vector-based List is used to maintain of a list of VncViewers
@@ -38,10 +38,10 @@ import java.net.*;//TEMP
 //    an external xml file.
 //
 
-class VncViewersList extends Vector {
+public class VncViewersList extends Vector {
     
   private EnhancedVncThumbnailViewer tnViewer;
-
+  
   //
   // Constructor.
   //
@@ -72,9 +72,18 @@ class VncViewersList extends Vector {
     
     return v;
   }
+  
   public VncViewer launchViewerReconnect(String host, int port, String password, String user, String userdomain, String compname, int order) {
     VncViewer v = launchViewer(tnViewer, host, port, password, user, userdomain, compname);
     tnViewer.addViewer(v, order);
+    
+    return v;
+  }
+  
+  /* Added on evnctv 1.003 */
+  public VncViewer launchViewerScreenCapture(String host, int port, String password, String user, String userdomain, String compname) {
+    VncViewer v = launchViewer(tnViewer, host, port, password, user, userdomain, compname);
+    tnViewer.addViewerScreenCapture(v);
     
     return v;
   }
@@ -124,7 +133,6 @@ class VncViewersList extends Vector {
 
     // launch a new viewer
     System.out.println("Launch Host: " + host + ":" + port);
-    //VncViewer v = new VncViewer();
     VncViewer v = new VncViewer();
     v.mainArgs = args;
     v.inAnApplet = false;
@@ -141,7 +149,6 @@ class VncViewersList extends Vector {
     
     return v;
   }
-
 
   public VncViewer getViewer(String hostname, int port) {
     VncViewer v = null;

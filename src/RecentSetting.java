@@ -1,4 +1,7 @@
 /* *
+ * Enhanced VNC Thumbnail Viewer 1.003
+ *  - Fixed bug value of month
+ * 
  * Enhanced VNC Thumbnail Viewer 1.002
  *  - Recent settings
  */
@@ -19,8 +22,14 @@ public class RecentSetting {
         this.type = type;
         
         Calendar c = Calendar.getInstance();
-        this.date = addZeroOnDateTime(c.get(Calendar.MONTH)) + "/" + addZeroOnDateTime(c.get(Calendar.DATE)) + "/" + c.get(Calendar.YEAR);
-        this.time = addZeroOnDateTime(c.get(Calendar.HOUR)) + ":" + addZeroOnDateTime(c.get(Calendar.MINUTE)) + ":" + addZeroOnDateTime(c.get(Calendar.SECOND)) + " " + (c.get(Calendar.AM_PM) == Calendar.AM ? "AM" : "PM");
+        this.date = addZeroOnDateTime(c.get(Calendar.MONTH) + 1) + "/" + 
+                addZeroOnDateTime(c.get(Calendar.DATE)) + "/" + 
+                c.get(Calendar.YEAR);
+        
+        this.time = addZeroOnDateTime(c.get(Calendar.HOUR)) + ":" + 
+                addZeroOnDateTime(c.get(Calendar.MINUTE)) + ":" + 
+                addZeroOnDateTime(c.get(Calendar.SECOND)) + " " + 
+                (c.get(Calendar.AM_PM) == Calendar.AM ? "AM" : "PM");
     }
     
     public RecentSetting (String title, String type, String date, String time) {

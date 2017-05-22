@@ -1,4 +1,7 @@
 /* *
+ * Enhanced VNC Thumbnail Viewer 1.003
+ *  - Changed message dialogs
+ * 
  * Enhanced VNC Thumbnail Viewer 1.002
  *  - Added recent settings logs
  *  - Optimized code & re-comments
@@ -152,7 +155,7 @@ public class LoginSettingDialog extends JDialog implements ActionListener, KeyLi
             } else {
                 // Check present password
                 if (!presentPasswordField.getText().equals(LoginSetting.getPassword())) {
-                    JOptionPane.showConfirmDialog(this, "Invalid present password", "Error", JOptionPane.DEFAULT_OPTION);
+                    JOptionPane.showMessageDialog(this, "Invalid present password", "Error", JOptionPane.ERROR_MESSAGE);
                 } else {
                     /* *
                      * Added on evnctv 1.002
@@ -179,9 +182,9 @@ public class LoginSettingDialog extends JDialog implements ActionListener, KeyLi
             // No account
             if (LoginSetting.getUsername() == null || LoginSetting.getUsername().equals("")) {
                 if (usernameField.getText().trim().equals("") || newPasswordField.getText().equals("") || confirmNewPasswordField.getText().equals("")) {
-                    JOptionPane.showConfirmDialog(this, "Please enter username/password", "Error", JOptionPane.DEFAULT_OPTION);
+                    JOptionPane.showMessageDialog(this, "Please enter username/password", "Error", JOptionPane.ERROR_MESSAGE);
                 } else if (!newPasswordField.getText().equals(confirmNewPasswordField.getText())) {
-                    JOptionPane.showConfirmDialog(this, "Password and confirm password do not match", "Error", JOptionPane.DEFAULT_OPTION);
+                    JOptionPane.showMessageDialog(this, "Password and confirm password do not match", "Error", JOptionPane.ERROR_MESSAGE);
                 } else {
                     /* *
                      * Added on evnctv 1.002
@@ -198,20 +201,20 @@ public class LoginSettingDialog extends JDialog implements ActionListener, KeyLi
                     LoginSetting.setIsEnable(true);
                     
                     this.dispose();
-                    JOptionPane.showConfirmDialog(this, "The account has been created already", "Notification", JOptionPane.DEFAULT_OPTION);
+                    JOptionPane.showMessageDialog(this, "The account has been created already", "Notification", JOptionPane.INFORMATION_MESSAGE);
                     new LoginDialog(tnviewer);
                 }
             } else {
                 // Change password
                 if (!newPasswordField.getText().isEmpty() || !confirmNewPasswordField.getText().isEmpty()) {
                     if (!newPasswordField.getText().equals(confirmNewPasswordField.getText())) {
-                        JOptionPane.showConfirmDialog(this, "New password and confirm new password do not match", "Error", JOptionPane.DEFAULT_OPTION);
+                        JOptionPane.showMessageDialog(this, "New password and confirm new password do not match", "Error", JOptionPane.ERROR_MESSAGE);
                     } else if (!newPasswordField.getText().equals(confirmNewPasswordField.getText())) {
-                        JOptionPane.showConfirmDialog(this, "New password ", "Error", JOptionPane.DEFAULT_OPTION);
+                        JOptionPane.showMessageDialog(this, "New password ", "Error", JOptionPane.ERROR_MESSAGE);
                     } else {
                         // Check present password
                         if (!presentPasswordField.getText().equals(LoginSetting.getPassword())) {
-                            JOptionPane.showConfirmDialog(this, "Invalid present password", "Error", JOptionPane.DEFAULT_OPTION);
+                            JOptionPane.showMessageDialog(this, "Invalid present password", "Error", JOptionPane.ERROR_MESSAGE);
                         } else {
                             /* *
                              * Added on evnctv 1.002
@@ -227,14 +230,14 @@ public class LoginSettingDialog extends JDialog implements ActionListener, KeyLi
                             LoginSetting.setIsEnable(true);
                     
                             this.dispose();
-                            JOptionPane.showConfirmDialog(this, "Password has been changed already", "Notification", JOptionPane.DEFAULT_OPTION);
+                            JOptionPane.showMessageDialog(this, "Password has been changed already", "Notification", JOptionPane.INFORMATION_MESSAGE);
                             new LoginDialog(tnviewer);
                         }
                     }
                 } else {
                     // Check present password
                     if (!presentPasswordField.getText().equals(LoginSetting.getPassword())) {
-                        JOptionPane.showConfirmDialog(this, "Invalid present password", "Error", JOptionPane.DEFAULT_OPTION);
+                        JOptionPane.showMessageDialog(this, "Invalid present password", "Error", JOptionPane.ERROR_MESSAGE);
                     } else {
                         /* *
                          * Added on evnctv 1.002
@@ -268,7 +271,7 @@ public class LoginSettingDialog extends JDialog implements ActionListener, KeyLi
             if (JOptionPane.showConfirmDialog(this, "Do you want to delete this account?", "Confirmation", JOptionPane.OK_CANCEL_OPTION) == 0) {
                 // Check present password
                 if (!presentPasswordField.getText().equals(LoginSetting.getPassword())) {
-                    JOptionPane.showConfirmDialog(this, "Invalid present password", "Error", JOptionPane.DEFAULT_OPTION);
+                    JOptionPane.showMessageDialog(this, "Invalid present password", "Error", JOptionPane.ERROR_MESSAGE);
                 } else {
                     LoginSetting.setUsername("");
                     LoginSetting.setPassword("");
@@ -283,7 +286,7 @@ public class LoginSettingDialog extends JDialog implements ActionListener, KeyLi
                     System.out.println(msg);
                     
                     this.dispose();
-                    JOptionPane.showConfirmDialog(this, "This account has been deleted already", "Notification", JOptionPane.DEFAULT_OPTION);
+                    JOptionPane.showMessageDialog(this, "This account has been deleted already", "Notification", JOptionPane.INFORMATION_MESSAGE);
                 }
             }
         } else if (e.getSource() == cancelButton) {

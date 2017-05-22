@@ -43,7 +43,7 @@ public class VncViewer extends java.applet.Applet
 
   boolean inAnApplet = true;
   boolean inSeparateFrame = false;
-
+  
   //
   // main() is called when run as a java program from the command line.
   // It simply runs the applet inside a newly-created frame.
@@ -149,7 +149,7 @@ public class VncViewer extends java.applet.Applet
   //
 
   public void run() {
-
+      
     gridbag = new GridBagLayout();
     vncContainer.setLayout(gridbag);
 

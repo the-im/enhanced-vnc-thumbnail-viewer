@@ -1,4 +1,7 @@
 /* *
+ * Enhanced VNC Thumbnail Viewer 1.003
+ *  - Changed message dialogs
+ * 
  * Enhanced VNC Thumbnail Viewer 1.002
  *  - Added recent settings logs
  * 
@@ -130,7 +133,7 @@ public class ProxySettingDialog extends JDialog implements ActionListener, KeyLi
             this.dispose();
         } else if (socks5Radio.isSelected()) {
             if (serverField.getText().trim().equals("") || portField.getText().trim().equals("")) {
-                JOptionPane.showConfirmDialog(this, "Please enter server and/or port number", "Error", JOptionPane.DEFAULT_OPTION);
+                JOptionPane.showMessageDialog(this, "Please enter server and/or port number", "Error", JOptionPane.ERROR_MESSAGE);
             } else {
                 try {
                     /* *
@@ -168,7 +171,7 @@ public class ProxySettingDialog extends JDialog implements ActionListener, KeyLi
 
                     this.dispose();
                 } catch (NumberFormatException en) {
-                    JOptionPane.showConfirmDialog(this, "Invalid port number", "Error", JOptionPane.DEFAULT_OPTION);
+                    JOptionPane.showMessageDialog(this, "Invalid port number", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         }

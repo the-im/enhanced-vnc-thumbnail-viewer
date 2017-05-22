@@ -1,4 +1,7 @@
 /* *
+ * Enhanced VNC Thumbnail Viewer 1.003
+ *  - Changed message dialogs
+ * 
  * Enhanced VNC Thumbnail Viewer 1.002
  *  - Added recent settings logs
  * 
@@ -52,11 +55,11 @@ public class SlideshowSettingDialog extends JDialog implements ActionListener, K
 
     private void saveSetting() {
         if (delayField.getText().trim().equals("")) {
-            JOptionPane.showConfirmDialog(this, "Please enter delay", "Error", JOptionPane.DEFAULT_OPTION);
+            JOptionPane.showMessageDialog(this, "Please enter delay", "Error", JOptionPane.ERROR_MESSAGE);
         } else {
             try {
                 if (Integer.parseInt(delayField.getText().trim()) <= 0) {
-                    JOptionPane.showConfirmDialog(this, "Delay must more than 0 second", "Error", JOptionPane.DEFAULT_OPTION);
+                    JOptionPane.showMessageDialog(this, "Delay must more than 0 second", "Error", JOptionPane.ERROR_MESSAGE);
                 } else {
                     /* *
                      * Added on evnctv 1.002
@@ -76,7 +79,7 @@ public class SlideshowSettingDialog extends JDialog implements ActionListener, K
                     this.dispose();
                 }
             } catch (NumberFormatException en) {
-                JOptionPane.showConfirmDialog(this, "Delay must be integer number", "Error", JOptionPane.DEFAULT_OPTION);
+                JOptionPane.showMessageDialog(this, "Delay must be integer number", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }

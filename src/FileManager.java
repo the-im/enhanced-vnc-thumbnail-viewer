@@ -1,4 +1,7 @@
 /* *
+ * Enhanced VNC Thumbnail Viewer 1.003
+ *  - Added load & save file of screen capture feature
+ * 
  * Enhanced VNC Thumbnail Viewer 1.002
  *  - To manage file such as open, save file
  */
@@ -98,6 +101,9 @@ public class FileManager {
                                     initSettings(e2, encrypted, encPassword, "Login");
                                 } else if (e2.getFullName().equalsIgnoreCase("Slideshow")) {
                                     initSettings(e2, encrypted, encPassword, "Slideshow");
+                                } else if (e2.getFullName().equalsIgnoreCase("ScreenCapture")) {
+                                    // Added on evnctv 1.003
+                                    initSettings(e2, encrypted, encPassword, "ScreenCapture");
                                 } else {
                                     System.out.println("Load: Ignoring " + e2.getFullName());
                                 }
@@ -151,6 +157,13 @@ public class FileManager {
             } else if (child.equals("Slideshow")) {
                 SlideshowSetting.setDelay(e.getAttribute("Delay", SlideshowSetting.INIT_DELAY));
                 System.out.println("Load slideshow settings...");
+            } else if (child.equals("ScreenCapture")) {
+                // Added on evnctv 1.003
+                ScreenCaptureSetting.setDelay(e.getAttribute("Delay", ScreenCaptureSetting.INIT_DELAY));
+                ScreenCaptureSetting.setPath(e.getAttribute("Path", ScreenCaptureSetting.INIT_PATH));
+                ScreenCaptureSetting.setIsEnable(e.getAttribute("Enable", ScreenCaptureSetting.INIT_IS_ENABLE ? 1 : 0) == 1 ? true : false);
+                
+                System.out.println("Load screen capture settings...");
             } else if (child.equals("Recent")) {
                 RecentSettingsList.addRecent(new RecentSetting(
                         e.getAttribute("Title", ""),
@@ -347,6 +360,13 @@ public class FileManager {
         IXMLElement slideShow = settings.createElement("Slideshow");
         slideShow.setAttribute("Delay", SlideshowSetting.getDelay() + "");
         settings.addChild(slideShow);
+        
+        // Added on evnctv 1.003 - Screen capture child
+        IXMLElement screenCapture = settings.createElement("ScreenCapture");
+        screenCapture.setAttribute("Delay", ScreenCaptureSetting.getDelay() + "");
+        screenCapture.setAttribute("Path", ScreenCaptureSetting.getPath());
+        screenCapture.setAttribute("Enable", ScreenCaptureSetting.getIsEnable() ? "1" : "0");
+        settings.addChild(screenCapture);
 
         // Recent settings element
         if (RecentSettingsList.getTotalRecents().size() > 0) {
