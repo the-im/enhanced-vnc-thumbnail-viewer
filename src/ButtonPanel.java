@@ -23,6 +23,15 @@
 // VNCViewer desktop window.
 //
 
+/*
+ * Enhanced VNC Thumbnail Viewer 1.0
+ *      - New attributes & methods
+ *      - Modified methods
+ *      - Change UI from awt to swing
+ *      - Change Hide desktop button to reconnect button
+ *      - Display computer name
+ */
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -37,7 +46,12 @@ class ButtonPanel extends Panel implements ActionListener {
   Button ctrlAltDelButton;
   Button refreshButton;
 
-  ButtonPanel(VncViewer v) {
+  // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
+  Label compnameLabel;
+  Button removeButton;
+
+  //ButtonPanel(VncViewer v) {
+  ButtonPanel(VncViewer v, String compname) {
     viewer = v;
 
     setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
@@ -65,6 +79,15 @@ class ButtonPanel extends Panel implements ActionListener {
     refreshButton.setEnabled(false);
     add(refreshButton);
     refreshButton.addActionListener(this);
+    
+    // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
+    removeButton = new Button("Remove");
+    removeButton.setEnabled(true);
+    //add(removeButton);
+    removeButton.addActionListener(this);
+    compnameLabel = new Label("      "+ compname);
+    compnameLabel.setFont(new Font("Helvetica", Font.BOLD, 14));
+    add(compnameLabel); 
   }
 
   //
@@ -83,7 +106,7 @@ class ButtonPanel extends Panel implements ActionListener {
 
   public void disableButtonsOnDisconnect() {
     remove(disconnectButton);
-    disconnectButton = new Button("Hide desktop");
+    disconnectButton = new Button("Reconnect"); // Modified on Enhanced VNC Thumbnail Viewer 1.0 ***
     disconnectButton.setEnabled(true);
     add(disconnectButton, 0);
     disconnectButton.addActionListener(this);

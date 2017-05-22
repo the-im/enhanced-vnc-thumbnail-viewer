@@ -23,6 +23,11 @@
 //  USA.
 //
 
+/*
+ * Enhanced VNC Thumbnail Viewer 1.0
+ *      - SOCKS5 is available
+ */
+
 //
 // RfbProto.java
 //
@@ -30,6 +35,8 @@
 import java.io.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.Socket;
 import java.util.zip.*;
 
@@ -205,18 +212,67 @@ class RfbProto {
 
   // If true, informs that the RFB socket was closed.
   private boolean closed;
+  
+  // New attributes
+  Proxy proxy;
+  ProxyData proxyData;
+  
 
   //
   // Constructor. Make TCP connection to RFB server.
   //
 
-  RfbProto(String h, int p, VncViewer v) throws IOException {
+  /*RfbProto(String h, int p, VncViewer v) throws IOException {
     viewer = v;
     host = h;
     port = p;
 
     if (viewer.socketFactory == null) {
       sock = new Socket(host, port);
+    } else {
+      try {
+	Class factoryClass = Class.forName(viewer.socketFactory);
+	SocketFactory factory = (SocketFactory)factoryClass.newInstance();
+	if (viewer.inAnApplet)
+	  sock = factory.createSocket(host, port, viewer);
+	else
+	  sock = factory.createSocket(host, port, viewer.mainArgs);
+      } catch(Exception e) {
+	e.printStackTrace();
+	throw new IOException(e.getMessage());
+      }
+    }
+    is = new DataInputStream(new BufferedInputStream(sock.getInputStream(),
+						     16384));
+    os = sock.getOutputStream();
+
+    timing = false;
+    timeWaitedIn100us = 5;
+    timedKbits = 0;
+  }*/
+  
+  //
+  // Modified on Enhanced VNC Thumbnail Viewer 1.0
+  //
+  RfbProto(String h, int p, VncViewer v, ProxyData pd) throws IOException {
+    viewer = v;
+    host = h;
+    port = p;
+    proxyData = pd;
+
+    if (viewer.socketFactory == null) {
+        // Connect via proxy: socks5
+        if(proxyData.getIsProxy()){
+            proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(proxyData.getHost(), proxyData.getPort()));
+            sock = new Socket(proxy);
+            sock.connect(new InetSocketAddress(host, port));
+            System.out.println("Status: Connecting SOCKS5 on "+ proxyData.getHost() +":"+ proxyData.getPort() +"...");
+        }
+        // Connnect via no proxy
+        else{
+            sock = new Socket(host, port);
+            System.out.println("Status: Connecting with no proxy...");
+        } 
     } else {
       try {
 	Class factoryClass = Class.forName(viewer.socketFactory);

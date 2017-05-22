@@ -17,6 +17,11 @@
 //  USA.
 //
 
+/*
+ * Enhanced VNC Thumbnail Viewer 1.0
+ *      - New methods -> launchViewer()
+ */
+
 import java.awt.*;
 import java.io.*;
 import net.n3.nanoxml.*; // Source available at http://nanoxml.cyberelf.be/
@@ -31,6 +36,9 @@ import java.net.*;//TEMP
 //
 
 class VncViewersList extends Vector {
+    
+  private VncThumbnailViewer tnViewer;
+  private static ProxyData proxyData;
 
   //
   // Constructor.
@@ -38,11 +46,19 @@ class VncViewersList extends Vector {
   public VncViewersList(VncThumbnailViewer v)
   {
     super();
-    
     tnViewer = v;
   }
+  
+  //
+  // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
+  //
+  public VncViewersList(VncThumbnailViewer v, ProxyData pd){
+    super();
+    tnViewer = v;
+    proxyData = pd;
+  }
 
-  private VncThumbnailViewer tnViewer;
+  
 
   public static boolean isHostsFileEncrypted(String filename) {
     boolean encrypted = false;
@@ -189,7 +205,8 @@ class VncViewersList extends Vector {
       System.out.println("LOAD Host: " + host + " Port: " + port + " SecType: " + secType);
       if(success) {
         if(getViewer(host, port) == null) {
-          VncViewer v = launchViewer(host, port, password, username, userdomain);
+          VncViewer v = launchViewer(host, port, password, username, userdomain, compname); // Modified on Enhanced VNC Thumbnail Viewer 1.0 ***
+          //VncViewer v = launchViewer(host, port, password, username, userdomain);
           //v.setCompName(compname);
           //v.setComment(comment);
         }
@@ -218,7 +235,7 @@ class VncViewersList extends Vector {
 
     IXMLElement manifest = new XMLElement("Manifest");
     manifest.setAttribute("Encrypted", (isEncrypted? "1" : "0") );
-    manifest.setAttribute("Version", Float.toString(VncThumbnailViewer.VERSION));
+    manifest.setAttribute("Version", VncThumbnailViewer.VERSION);
     
     ListIterator l = listIterator();
     while(l.hasNext()) {
@@ -227,8 +244,8 @@ class VncViewersList extends Vector {
       String port = Integer.toString(v.port);
       String password = v.passwordParam;
       String username = v.usernameParam;
+      String compname = v.compname;
       //String userdomain = 
-      //String compname =
       //String comment =
       String sectype = "1";
       if(password != null && password.length() != 0) {
@@ -243,7 +260,6 @@ class VncViewersList extends Vector {
           password = DesCipher.encryptData(password,encPassword);
         if(sectype == "-6") {
           username = DesCipher.encryptData(username,encPassword);
-          //userdomain = encryptData(userdomain,encPassword);
         }
         //compname = encryptData(compname,encPassword);
         //comment = encryptData(comment,encPassword);
@@ -261,7 +277,7 @@ class VncViewersList extends Vector {
           //c.setAttribute("UserDomain", userdomain);
         }
       }
-      //c.setAttribute("CompName", "");
+      c.setAttribute("CompName", compname);
       //c.setAttribute("Comment", "");
     }
     
@@ -278,15 +294,36 @@ class VncViewersList extends Vector {
   }
 
 
-  public VncViewer launchViewer(String host, int port, String password, String user, String userdomain) {
-    VncViewer v = launchViewer(tnViewer, host, port, password, user, userdomain);
+  //
+  // If a host is loaded in first time, this method will be called
+  //
+  public VncViewer launchViewer(String host, int port, String password, String user, String userdomain, String compname) {
+    VncViewer v = launchViewer(tnViewer, host, port, password, user, userdomain, compname);
     add(v);
     tnViewer.addViewer(v);
     
     return v;
   }
+  
+  //
+  // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
+  // When want to reconnect, this will be called
+  //
+  public VncViewer launchViewerReconnect(String host, int port, String password, String user, String userdomain, String compname) {
+    VncViewer v = launchViewer(tnViewer, host, port, password, user, userdomain, compname);
+    tnViewer.addViewer(v);
+    
+    return v;
+  }
+  public VncViewer launchViewerReconnect(String host, int port, String password, String user, String userdomain, String compname, int index) {
+    VncViewer v = launchViewer(tnViewer, host, port, password, user, userdomain, compname);
+    tnViewer.addViewer(v, index);
+    
+    return v;
+  }
+  
 
-  public static VncViewer launchViewer(VncThumbnailViewer tnviewer, String host, int port, String password, String user, String userdomain) {
+  public static VncViewer launchViewer(VncThumbnailViewer tnviewer, String host, int port, String password, String user, String userdomain, String compname) {
     String args[] = new String[4];
     args[0] = "host";
     args[1] = host;
@@ -319,10 +356,20 @@ class VncViewersList extends Vector {
       newargs[newlen-1] = userdomain;
       args = newargs;
     }
+    
+    if(compname != null && compname.length() != 0) {
+      int newlen = args.length + 2;
+      String[] newargs = new String[newlen];
+      System.arraycopy(args, 0, newargs, 0, newlen-2);
+      newargs[newlen-2] = "compname";
+      newargs[newlen-1] = compname;
+      args = newargs;
+    }
 
     // launch a new viewer
     System.out.println("Launch Host: " + host + ":" + port);
-    VncViewer v = new VncViewer();
+    //VncViewer v = new VncViewer();
+    VncViewer v = new VncViewer(proxyData);
     v.mainArgs = args;
     v.inAnApplet = false;
     v.inSeparateFrame = false;

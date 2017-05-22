@@ -27,10 +27,16 @@
 // It sets the encodings array and some booleans.
 //
 
+/*
+ * Enhanced VNC Thumbnail Viewer 1.0
+ *      - Change UI from awt to swing
+ */
+
 import java.awt.*;
 import java.awt.event.*;
+import javax.swing.*;
 
-class OptionsFrame extends Frame
+class OptionsFrame extends JFrame
   implements WindowListener, ActionListener, ItemListener {
 
   static String[] names = {
@@ -71,9 +77,9 @@ class OptionsFrame extends Frame
     scaleCursorIndex     = 8,
     shareDesktopIndex    = 9;
 
-  Label[] labels = new Label[names.length];
+  JLabel[] labels = new JLabel[names.length];
   Choice[] choices = new Choice[names.length];
-  Button closeButton;
+  JButton closeButton;
   VncViewer viewer;
 
 
@@ -115,7 +121,7 @@ class OptionsFrame extends Frame
     gbc.fill = GridBagConstraints.BOTH;
 
     for (int i = 0; i < names.length; i++) {
-      labels[i] = new Label(names[i]);
+      labels[i] = new JLabel(names[i]);
       gbc.gridwidth = 1;
       gridbag.setConstraints(labels[i],gbc);
       add(labels[i]);
@@ -131,7 +137,7 @@ class OptionsFrame extends Frame
       }
     }
 
-    closeButton = new Button("Close");
+    closeButton = new JButton("Close");
     gbc.gridwidth = GridBagConstraints.REMAINDER;
     gridbag.setConstraints(closeButton, gbc);
     add(closeButton);

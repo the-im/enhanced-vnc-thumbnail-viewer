@@ -17,14 +17,21 @@
 //  USA.
 //
 
+/*
+ * Enhanced VNC Thumbnail Viewer 1.0
+ *      - Add computer name field
+ *      - Change UI from awt to swing
+ */
+
 import java.awt.*;
 import java.awt.event.*;
+import javax.swing.*;
 
 //
 // The Dialog is used to add another host to VncThumbnailViewer
 //
 
-class AddHostDialog extends Dialog implements ActionListener, ItemListener {
+class AddHostDialog extends JDialog implements ActionListener, ItemListener {
 
   static String readEncPassword(String encPass) {
     if(encPass.length() != 16) {
@@ -53,13 +60,16 @@ class AddHostDialog extends Dialog implements ActionListener, ItemListener {
 
   VncThumbnailViewer tnviewer;
 
-  TextField hostField;
-  TextField portField;
-  TextField usernameField;
-  TextField passwordField;
+  JTextField hostField;
+  JTextField portField;
+  JTextField usernameField;
+  JPasswordField passwordField;
   Choice authChoice;
-  Button connectButton;
-  Button cancelButton;
+  JButton connectButton;
+  JButton cancelButton;
+  
+  // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
+  JTextField compnameField;
 
   //
   // Constructor.
@@ -78,13 +88,14 @@ class AddHostDialog extends Dialog implements ActionListener, ItemListener {
     
     setFont(new Font("Helvetica", Font.PLAIN, 14));
     
-    hostField = new TextField("", 10);
-    portField = new TextField("5900", 10);
-    usernameField = new TextField("", 10);
+    hostField = new JTextField("", 10);
+    portField = new JTextField("5900", 10);
+    usernameField = new JTextField("", 10);
     usernameField.enable(false); // not needed by default
-    passwordField = new TextField("", 10);
-    passwordField.setEchoChar('*');
+    passwordField = new JPasswordField("", 10);
     passwordField.enable(false); // not needed by default
+    
+    compnameField = new JTextField("", 10); // Added on version 2.0 ***
 
     authChoice = new Choice();
     authChoice.addItemListener(this);
@@ -93,8 +104,8 @@ class AddHostDialog extends Dialog implements ActionListener, ItemListener {
     authChoice.add("VNC Enc. Password");
     authChoice.add("MS-Logon");
     
-    connectButton = new Button("Connect...");
-    cancelButton = new Button("Cancel");
+    connectButton = new JButton("Connect...");
+    cancelButton = new JButton("Cancel");
     connectButton.addActionListener(this);
     cancelButton.addActionListener(this);
 
@@ -103,22 +114,27 @@ class AddHostDialog extends Dialog implements ActionListener, ItemListener {
     gridbag.setConstraints(authChoice, c);
     gridbag.setConstraints(hostField, c);
     gridbag.setConstraints(portField, c);
+    gridbag.setConstraints(compnameField, c); // Added on version 2.0 ***
     gridbag.setConstraints(usernameField, c);
     gridbag.setConstraints(passwordField, c);
     gridbag.setConstraints(connectButton, c);
     
-    add(new Label("Host", Label.RIGHT));
+    add(new JLabel("Host", JLabel.RIGHT));
     add(hostField);
-    add(new Label("Port", Label.RIGHT));
+    add(new JLabel("Port", JLabel.RIGHT));
     add(portField);
-    add(new Label("Authentication:", Label.RIGHT));
+    add(new JLabel("Computer Name", JLabel.RIGHT));
+    add(compnameField);
+    add(new JLabel("Authentication:", JLabel.RIGHT));
     add(authChoice);
-    add(new Label("Username", Label.RIGHT));
+    add(new JLabel("Username", JLabel.RIGHT));
     add(usernameField);
-    add(new Label("Password", Label.RIGHT));
+    add(new JLabel("Password", JLabel.RIGHT));
     add(passwordField);
     add(cancelButton);
     add(connectButton);
+    
+    setTitle("Add new host"); // Added on version 2.0 ***
     
     Point loc = tnviewer.getLocation();
     Dimension dim = tnviewer.getSize();
@@ -146,7 +162,10 @@ class AddHostDialog extends Dialog implements ActionListener, ItemListener {
       pass = readEncPassword(pass);
     }    
     
-    tnviewer.launchViewer(host, port, pass, user);
+    // Computer name:
+    String compname = compnameField.getText();
+    
+    tnviewer.launchViewer(host, port, pass, user, compname);
   }
   
 

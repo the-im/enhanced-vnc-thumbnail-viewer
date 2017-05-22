@@ -1,4 +1,5 @@
 //
+//  Copyright (C) 2011 Intelligent Millionaire Co.,Ltd.  All Rights Reserved.
 //  Copyright (C) 2007 David Czechowski.  All Rights Reserved.
 //  Copyright (C) 2001-2004 HorizonLive.com, Inc.  All Rights Reserved.
 //  Copyright (C) 2002 Constantin Kaplinsky.  All Rights Reserved.
@@ -25,6 +26,20 @@
 // into which multiple vncviewers can be added.
 //
 
+/*
+ * Original source code: VNC Thumbnail Viewer version 1.4 from http://code.google.com/p/vncthumbnailviewer/source/checkout
+ * ----------------------------------------------
+ * Enhanced VNC Thumbnail Viewer 1.0
+ *      - Change UI from awt to swing
+ *      - New classes -> LoginDialog, LoginSettingDialog, LoginData, ProxySettingDialog, AboutDialog, ProxyData, SearchList
+ *      - SOCKS5 is available
+ *      - Display most 4 viewers per page
+ *      - Search for viewer that you want
+ *      - Login on start up program
+ *      - Reconnect is available
+ *      - Display computer name
+ */
+
 
 import java.awt.*;
 import java.awt.event.*;
@@ -32,6 +47,7 @@ import java.io.*;
 import java.util.*;
 import java.lang.Math.*;
 import java.net.*;
+import javax.swing.*;
 
 public class VncThumbnailViewer extends Frame
     implements WindowListener, ComponentListener, ContainerListener, MouseListener, ActionListener  {
@@ -43,6 +59,7 @@ public class VncThumbnailViewer extends Frame
     String h = new String("");
     String pw = new String("");
     String us = new String("");
+    String compname = new String("");
     int p = 0;
 
     for(int i = 0; i < argv.length; i += 2) {
@@ -67,16 +84,20 @@ public class VncThumbnailViewer extends Frame
       if(param.equalsIgnoreCase("encpassword")) {
         pw = AddHostDialog.readEncPassword(value);
       }
+      if(param.equalsIgnoreCase("compname")) {
+        compname = value;
+      }
       
       if(i+2 >= argv.length || argv[i+2].equalsIgnoreCase("host")) {
         //if this is the last parameter, or if the next parameter is a next host...
         if(h != "" && p != 0) {
           System.out.println("Command-line: host " + h + " port " + p);
-          t.launchViewer(h, p, pw, us);
+          t.launchViewer(h, p, pw, us, compname);
           h = "";
           p = 0;
           pw = "";
           us = "";
+          compname = "";
         } else {
           System.out.println("ERROR: No port specified for last host (" + h + ")");
         }
@@ -84,33 +105,116 @@ public class VncThumbnailViewer extends Frame
     }
     
   }
+  //
+  // Modified on Enhanced VNC Thumbnail Viewer 1.0 ***
+  // Change version display from Float to String because it's available to show sub-version such as 1.0.1
+  //
+  final static String VERSION = "1.0";
+  final static String PROGRAM_NAME = "Enhanced VNC Thumbnail Viewer";
   
-  final static float VERSION = 1.4f;
-  
-  VncViewersList viewersList;
+  VncViewersList viewersList, viewersSearchList;
   AddHostDialog hostDialog;
   MenuItem newhostMenuItem, loadhostsMenuItem, savehostsMenuItem, exitMenuItem;
   Frame soloViewer;
   int widthPerThumbnail, heightPerThumbnail;
   int thumbnailRowCount;
+  
+  // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
+  LoginDialog loginDialog;
+  ProxySettingDialog proxySettingDialog;
+  ProxyData proxyData;
+  SearchList searchList;
+  Pagination pagination;
+  JButton nextButton, previousButton, searchButton, cancelSearchButton;
+  JPanel naviPanel, viewerPanel, naviLeftPanel, naviRightPanel;
+  MenuItem proxyMenuItem, loginMenuItem, aboutMenuItem;
+  JTextField searchField;
+  boolean isSearch;
+  
 
   VncThumbnailViewer() {
-    viewersList = new VncViewersList(this);
+    PlatformUI.getLookAndFeel();
+      
+    //viewersList = new VncViewersList(this);
     thumbnailRowCount = 0;
     widthPerThumbnail = 0;
     heightPerThumbnail = 0;
 
-    setTitle("DJC Thumbnail Viewer");
+    setTitle(PROGRAM_NAME);
     addWindowListener(this);
     addComponentListener(this);
     addMouseListener(this);
 
-    GridLayout grid = new GridLayout();
-    setLayout(grid);
+    //GridLayout grid = new GridLayout();
+    //setLayout(grid);
     setSize(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getSize());
     setMenuBar(new MenuBar());
     getMenuBar().add( createFileMenu() );
+    
+    // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
+    getMenuBar().add(createSettingsMenu());
+    getMenuBar().add(createAboutMenu());
+    
+    naviPanel = new JPanel(new GridLayout(1,2));
+    viewerPanel = new JPanel(new GridLayout(2,2));
+    naviPanel.setBackground(Color.gray);
+    viewerPanel.setBackground(Color.white);
+    add(naviPanel, BorderLayout.NORTH);
+    add(viewerPanel, BorderLayout.CENTER);
+
+    nextButton = new JButton("Next");
+    previousButton = new JButton("Previous");
+    searchField = new JTextField("", 15);
+    searchButton = new JButton("Search");
+    cancelSearchButton = new JButton("Cancel");
+    
+    nextButton.setBackground(Color.gray);
+    previousButton.setBackground(Color.gray);
+    searchButton.setBackground(Color.gray);
+    cancelSearchButton.setBackground(Color.gray);
+    
+    nextButton.setPreferredSize(new Dimension(80,30));
+    previousButton.setPreferredSize(new Dimension(80,30));
+    
+    nextButton.setEnabled(false);
+    previousButton.setEnabled(false);
+    searchField.setEnabled(false);
+    searchButton.setEnabled(false);
+    cancelSearchButton.setEnabled(false);
+
+    nextButton.addActionListener(this);
+    previousButton.addActionListener(this);
+    searchButton.addActionListener(this);
+    cancelSearchButton.addActionListener(this);
+    
+    naviLeftPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+    naviRightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+    naviLeftPanel.setBackground(Color.gray);
+    naviRightPanel.setBackground(Color.gray);
+    naviLeftPanel.add(previousButton);
+    naviLeftPanel.add(nextButton);
+    naviRightPanel.add(searchField);
+    naviRightPanel.add(searchButton);
+    naviRightPanel.add(cancelSearchButton);
+ 
+    naviPanel.add(naviLeftPanel);
+    naviPanel.add(naviRightPanel);
+    
+    proxySettingDialog = new ProxySettingDialog(this);
+    proxyData = proxySettingDialog.readFile();
+    viewersList = new VncViewersList(this, proxyData);
+    searchList = new SearchList(this);
+    pagination = new Pagination(viewersList);
+    
     setVisible(true);
+    
+    // Must login on start up?
+    LoginSettingDialog loginSettingDialog = new LoginSettingDialog(this);
+    LoginData loginData = loginSettingDialog.readFile();
+    if(loginData.getIsAuth()){
+        new LoginDialog(this);
+    }
+
     
     soloViewer = new Frame();
     soloViewer.setSize(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getSize());
@@ -120,17 +224,16 @@ public class VncThumbnailViewer extends Frame
   }
 
 
-  public void launchViewer(String host, int port, String password, String user) {
-    launchViewer(host, port, password, user, "");
+  public void launchViewer(String host, int port, String password, String user, String compname) {
+    launchViewer(host, port, password, user, "", compname);
   }
 
-  public void launchViewer(String host, int port, String password, String user, String userdomain) {
-    VncViewer v = viewersList.launchViewer(host, port, password, user, userdomain);
+  public void launchViewer(String host, int port, String password, String user, String userdomain, String compname) {
+    VncViewer v = viewersList.launchViewer(host, port, password, user, userdomain, compname);
     //addViewer(v); called by viewersList.launchViewer
   }
 
-
-  void addViewer(VncViewer v) {
+  /*void addViewer(VncViewer v) {
     int r = (int)Math.sqrt(viewersList.size() - 1) + 1;//int r = (int)Math.sqrt(this.getComponentCount() - 1) + 1;
     if(r != thumbnailRowCount) {
       thumbnailRowCount = r;
@@ -140,12 +243,108 @@ public class VncThumbnailViewer extends Frame
     }
     add(v);
     validate();
+  }*/
+  
+
+  //
+  // Modified on Enhanced VNC Thumbnail Viewer 1.0 ***
+  //
+  void addViewer(VncViewer v) {
+    // Initial var r to choose a size for viewer 
+    int r;
+    if(pagination.isLimited()){
+        r = (int)Math.sqrt(Pagination.thumbsnailPerPage - 1) + 1;
+    }else{
+        if(isSearch){
+            r = (int)Math.sqrt(viewersSearchList.size() - 1) + 1;
+        }else{
+            r = (int)Math.sqrt(viewersList.size() - 1) + 1;
+        }
+    }
+    
+    if(r != thumbnailRowCount) {
+      thumbnailRowCount = r;
+      ((GridLayout)viewerPanel.getLayout()).setRows(thumbnailRowCount);
+      resizeThumbnails();
+    }
+    
+    if(viewerPanel.getComponentCount() < Pagination.thumbsnailPerPage){
+        viewerPanel.add(v);
+        validate();
+    }
+    else{
+        //v.disconnect();
+    }
+    
+    
+    enableNaviButton();
   }
+  
+  void addViewer(VncViewer v, int index) {
+    // Initial var r to choose a size for viewer 
+    int r;
+    if(pagination.isLimited()){
+        r = (int)Math.sqrt(Pagination.thumbsnailPerPage - 1) + 1;
+    }else{
+        if(isSearch){
+            r = (int)Math.sqrt(viewersSearchList.size() - 1) + 1;
+        }else{
+            r = (int)Math.sqrt(viewersList.size() - 1) + 1;
+        }
+    }
+    
+    if(r != thumbnailRowCount) {
+      thumbnailRowCount = r;
+      ((GridLayout)viewerPanel.getLayout()).setRows(thumbnailRowCount);
+      resizeThumbnails();
+    }
 
+    if(viewerPanel.getComponentCount() < Pagination.thumbsnailPerPage){
+        viewerPanel.add(v, index);
+        validate();
+    }
+    else{
+        //v.disconnect();
+    }
+    
+    
+    enableNaviButton();
+  }
+  
+  //
+  // New method ***
+  // When reconnect or next/previous page, this method will be called
+  //
+  /*void addViewerReconnect(VncViewer v) {
+    // Initial var r to choose a size for viewer 
+    int r;
+    if(pagination.isLimited()){
+        r = (int)Math.sqrt(Pagination.thumbsnailPerPage - 1) + 1;
+    }else{
+        if(isSearch){
+            r = (int)Math.sqrt(viewersListTmp.size() - 1) + 1;
+        }else{
+            r = (int)Math.sqrt(viewersList.size() - 1) + 1;
+        }
+    }
+    
+    if(r != thumbnailRowCount) {
+      thumbnailRowCount = r;
+      ((GridLayout)viewerPanel.getLayout()).setRows(thumbnailRowCount);
+      resizeThumbnails();
+    }
+    
+    viewerPanel.add(v);
+    validate();
+    
+    enableNPButton();
+  }*/
 
-  void removeViewer(VncViewer v) {
+  
+
+  /*void removeViewer(VncViewer v) {
     viewersList.remove(v);
-    remove(v);
+    viewerPanel.remove(v);
     validate();
 
     int r = (int)Math.sqrt(viewersList.size() - 1) + 1;//int r = (int)Math.sqrt(this.getComponentCount() - 1) + 1;
@@ -153,6 +352,34 @@ public class VncThumbnailViewer extends Frame
       thumbnailRowCount = r;
       ((GridLayout)this.getLayout()).setRows(thumbnailRowCount);
 //      ((GridLayout)this.getLayout()).setColumns(thumbnailRowCount);
+      resizeThumbnails();
+    }
+  }*/
+  
+  
+  //
+  // Modified on Enhanced VNC Thumbnail Viewer 1.0 ***
+  //
+  void removeViewer(VncViewer v) {
+    viewersList.remove(v);
+    viewerPanel.remove(v);
+    v.disconnect();
+    validate();
+
+    int r;
+    if(pagination.isLimited()){
+        r = (int)Math.sqrt(Pagination.thumbsnailPerPage - 1) + 1;
+    }else{
+        if(isSearch){
+            r = (int)Math.sqrt(viewersSearchList.size() - 1) + 1;
+        }else{
+            r = (int)Math.sqrt(viewersList.size() - 1) + 1;
+        }
+    }
+    
+    if(r != thumbnailRowCount) {
+      thumbnailRowCount = r;
+      ((GridLayout)viewerPanel.getLayout()).setRows(thumbnailRowCount);
       resizeThumbnails();
     }
   }
@@ -166,8 +393,10 @@ public class VncThumbnailViewer extends Frame
       soloHostClose();
 
     soloViewer.setVisible(true);
-    soloViewer.setTitle(v.host);
-    this.remove(v);
+    //soloViewer.setTitle(v.host);
+    soloViewer.setTitle(v.compname +" ("+ v.host +":"+v.port+")"); // Modified on version 1.0 - Enhanced VNC Thumbnail Viewer ***
+    //this.remove(v);
+    viewerPanel.remove(v); // Modified on Enhanced VNC Thumbnail Viewer 1.0 ***
     soloViewer.add(v);
     v.vc.removeMouseListener(this);
     this.validate();
@@ -205,8 +434,12 @@ public class VncThumbnailViewer extends Frame
     v.vc.maxWidth = maxWidth;
     v.vc.maxHeight = maxHeight;
     v.vc.scalingFactor = sf;
-    v.vc.scaledWidth = (fbWidth * sf + 50) / 100;
-    v.vc.scaledHeight = (fbHeight * sf + 50) / 100;
+    //v.vc.scaledWidth = (fbWidth * sf + 50) / 100;
+    //v.vc.scaledHeight = (fbHeight * sf + 50) / 100;
+    
+    // Modified on Enhanced VNC Thumbnail Viewer 1.0 ***
+    v.vc.scaledWidth = (fbWidth * sf + 50) / 100 - 20;
+    v.vc.scaledHeight = (fbHeight * sf + 50) / 100 - 20;
 
     //Fix: invoke a re-paint of canvas?
     //Fix: invoke a re-size of canvas?
@@ -214,7 +447,7 @@ public class VncThumbnailViewer extends Frame
   }
 
 
-  void resizeThumbnails() {
+  /*void resizeThumbnails() {
     int newWidth = getWidthNoInsets(this) / thumbnailRowCount;
     int newHeight = getHeightNoInsets(this) / thumbnailRowCount;
  
@@ -233,7 +466,38 @@ public class VncThumbnailViewer extends Frame
           }
         }
       }
+    }
 
+  }*/
+  
+  //
+  // Modified on Enhanced VNC Thumbnail Viewer 1.0 ***
+  //
+  void resizeThumbnails() {
+    int newWidth = getWidthNoInsets(this) / thumbnailRowCount;
+    int newHeight = getHeightNoInsets(this) / thumbnailRowCount;
+ 
+
+    if(newWidth != widthPerThumbnail || newHeight != heightPerThumbnail) {
+      widthPerThumbnail = newWidth;
+      heightPerThumbnail = newHeight;
+
+      ListIterator l;
+      if(isSearch){
+          l = viewersSearchList.listIterator();
+      }else{
+          l = viewersList.listIterator();
+      }
+      
+      while(l.hasNext()) {
+        VncViewer v = (VncViewer)l.next();
+        //v.
+        if(!soloViewer.isAncestorOf(v)) {
+          if(v.vc != null) { // if the connection has been established
+            updateCanvasScaling(v, widthPerThumbnail, heightPerThumbnail);
+          }
+        }
+      }
     }
 
   }
@@ -268,7 +532,8 @@ public class VncThumbnailViewer extends Frame
     }
   }
   
-  private void quit() {
+  //private void quit() {
+  public void quit() {
     // Called by either File->Exit or Closing of the main window
     System.out.println("Closing window");
     ListIterator l = viewersList.listIterator();
@@ -319,6 +584,32 @@ public class VncThumbnailViewer extends Frame
     savehostsMenuItem.enable(true);
         
     return fileMenu;
+  }
+  
+  //
+  // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
+  //
+  private Menu createSettingsMenu()
+  {
+    Menu settingsMenu = new Menu("Settings");
+    proxyMenuItem = new MenuItem("Proxy");
+    loginMenuItem = new MenuItem("Login");
+    proxyMenuItem.addActionListener(this);
+    loginMenuItem.addActionListener(this);
+    settingsMenu.add(proxyMenuItem);
+    settingsMenu.addSeparator();
+    settingsMenu.add(loginMenuItem);
+        
+    return settingsMenu;
+  }
+  
+  private Menu createAboutMenu()
+  {
+    Menu helpMenu = new Menu("Help");
+    aboutMenuItem = new MenuItem("About");
+    aboutMenuItem.addActionListener(this);
+    helpMenu.add(aboutMenuItem);
+    return helpMenu;
   }
 
 
@@ -386,13 +677,19 @@ public class VncThumbnailViewer extends Frame
       v.vc.addMouseListener(this);
       v.buttonPanel.addContainerListener(this);
       v.buttonPanel.disconnectButton.addActionListener(this);
+      v.buttonPanel.removeButton.addActionListener(this); // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
       updateCanvasScaling(v, widthPerThumbnail, heightPerThumbnail);
     }
 
     // This detects when a vncviewer's Disconnect button had been pushed
     else if(evt.getChild() instanceof Button) {
       Button b = (Button)evt.getChild();
-      if(b.getLabel() == "Hide desktop") {
+      if(b.getLabel() == "Reconnect") {
+        b.addActionListener(this);
+      }
+      
+      // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
+      if(b.getLabel() == "Remove") {
         b.addActionListener(this);
       }
     }
@@ -404,10 +701,18 @@ public class VncThumbnailViewer extends Frame
   
   // Action Listener Event:
   public void actionPerformed(ActionEvent evt) {
-    if( evt.getSource() instanceof Button && ((Button)evt.getSource()).getLabel() == "Hide desktop") {
+    /*if( evt.getSource() instanceof Button && ((Button)evt.getSource()).getLabel() == "Hide desktop") {
       VncViewer v = (VncViewer)((Component)((Component)evt.getSource()).getParent()).getParent();
       this.remove(v);
       viewersList.remove(v);
+    }*/
+      
+    // Modified on Enhanced VNC Thumbnail Viewer 1.0 ***
+    if(evt.getSource() instanceof Button && ((Button)evt.getSource()).getLabel() == "Reconnect") {
+      VncViewer v = (VncViewer)((Component)((Component)evt.getSource()).getParent()).getParent();
+      int index = viewerPanel.getComponentZOrder(v);
+      viewerPanel.remove(v);
+      v = viewersList.launchViewerReconnect(v.host, v.port, v.passwordParam, v.usernameParam, v.userdomain, v.compname, index);
     }
     if(evt.getSource() == newhostMenuItem) {
       hostDialog = new AddHostDialog(this);
@@ -421,7 +726,130 @@ public class VncThumbnailViewer extends Frame
     if(evt.getSource() == exitMenuItem) {
       quit();
     }
+    
+    
+    //
+    // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
+    //
+    /*if(evt.getSource() instanceof Button && ((Button)evt.getSource()).getLabel() == "Remove") {
+      VncViewer v = (VncViewer)((Component)((Component)evt.getSource()).getParent()).getParent();
+      removeViewer(v);
+    }*/
+    if(evt.getSource() == aboutMenuItem) {
+      new AboutDialog(this);
+    }
+    if(evt.getSource() == proxyMenuItem) {
+      proxySettingDialog.setVisible(true);
+    }
+    if(evt.getSource() == loginMenuItem) {
+      new LoginSettingDialog(this).setVisible(true);
+    }
+    if(evt.getSource() == cancelSearchButton) {
+      isSearch = false;
+      searchField.setText("");
+      pagination = new Pagination(viewersList);
+      
+      clearViewerOnPage();
 
+      VncViewer v;
+      for(int i=0; i<viewersList.size(); i++){
+          v = (VncViewer) viewersList.get(i);
+          viewersList.launchViewerReconnect(v.host, v.port, v.passwordParam, v.usernameParam, v.userdomain, v.compname);
+      }
+            
+      enableNaviButton();
+    }
+    if(evt.getSource() == searchButton) {
+        isSearch = true;
+        viewersSearchList = searchList.searchViewer(viewersList, searchField.getText().trim());
+        pagination = new Pagination(viewersSearchList);
+        
+        clearViewerOnPage();
+
+        VncViewer v;
+        for(int i=0; i<viewersSearchList.size(); i++){
+            v = (VncViewer) viewersSearchList.get(i);
+            viewersSearchList.launchViewerReconnect(v.host, v.port, v.passwordParam, v.usernameParam, v.userdomain, v.compname);
+        }
+            
+        enableNaviButton();
+    }
+    if(evt.getSource() == previousButton || evt.getSource() == nextButton) {
+        int[] step;
+        
+        if(evt.getSource() == previousButton){
+            step = pagination.previous();
+        }else{
+            step = pagination.next();
+        }
+        
+        if(step != null){
+            clearViewerOnPage();
+
+            VncViewer v;
+            for(int i=step[0]; i<=step[1]; i++){
+                if(isSearch){
+                    v = (VncViewer) viewersSearchList.get(i);
+                    viewersSearchList.launchViewerReconnect(v.host, v.port, v.passwordParam, v.usernameParam, v.userdomain, v.compname);
+                }else{
+                    v = (VncViewer) viewersList.get(i);
+                    viewersList.launchViewerReconnect(v.host, v.port, v.passwordParam, v.usernameParam, v.userdomain, v.compname);
+                }
+            }
+            enableNaviButton();
+        }
+    }
+
+  }
+  
+  // 
+  // Enable/disable button on navigator panel
+  //
+  private void enableNaviButton(){
+      if(pagination.hasNext()){
+          nextButton.setEnabled(true);
+      }else{
+          nextButton.setEnabled(false);
+      }
+            
+      if(pagination.hasPrevious()){
+          previousButton.setEnabled(true);
+      }else{
+          previousButton.setEnabled(false);
+      }
+      
+      if(!pagination.isLimited()){
+          nextButton.setEnabled(false);
+          previousButton.setEnabled(false);
+      }
+      
+      if(isSearch){
+          cancelSearchButton.setEnabled(true);
+      }else{
+          cancelSearchButton.setEnabled(false);
+      }
+      
+      if(pagination.isEmpty() && !isSearch){
+          searchField.setEnabled(false);
+          searchButton.setEnabled(false);
+      }else{
+          searchField.setEnabled(true);
+          searchButton.setEnabled(true);
+      }
+      
+      
+  }
+  
+  //
+  // Disconnect and remove all viewers on each page
+  //
+  private void clearViewerOnPage(){
+      VncViewer v;
+      for(int i=0; i<viewerPanel.getComponentCount(); i++){
+          v = (VncViewer) viewerPanel.getComponent(i);
+          v.disconnect();
+      }
+      viewerPanel.removeAll();
   }
   
 }

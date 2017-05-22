@@ -25,6 +25,11 @@
 // a VNC desktop.
 //
 
+/*
+ * Enhanced VNC Thumbnail Viewer 1.0
+ *      - Display computer name
+ */
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -87,9 +92,26 @@ public class VncViewer extends java.applet.Applet
   int deferScreenUpdates;
   int deferCursorUpdates;
   int deferUpdateRequests;
+  String compname; // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
+  String userdomain = "";
 
   // Reference to this applet for inter-applet communication.
   public static java.applet.Applet refApplet;
+  
+  //New attributes
+  ProxyData proxyData;
+  
+  
+  //
+  // New constructors
+  //
+  public VncViewer(){}
+  
+  public VncViewer(ProxyData pd){
+      proxyData = pd;
+  }
+  
+  
 
   //
   // init()
@@ -149,7 +171,7 @@ public class VncViewer extends java.applet.Applet
     gbc.fill = GridBagConstraints.BOTH; // AS & DJC
 
     if (showControls) {
-      buttonPanel = new ButtonPanel(this);
+      buttonPanel = new ButtonPanel(this, compname);
       gridbag.setConstraints(buttonPanel, gbc);
       vncContainer.add(buttonPanel);
     }
@@ -322,7 +344,8 @@ public class VncViewer extends java.applet.Applet
 
     showConnectionStatus("Connecting to " + host + ", port " + port + "...");
 
-    rfb = new RfbProto(host, port, this);
+    //rfb = new RfbProto(host, port, this);
+    rfb = new RfbProto(host, port, this, proxyData);
     showConnectionStatus("Connected to server");
 
     rfb.readVersionMsg();
@@ -752,6 +775,12 @@ public class VncViewer extends java.applet.Applet
 
     // SocketFactory.
     socketFactory = readParameter("SocketFactory", false);
+    
+    // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
+    compname = readParameter("COMPNAME", false);
+    if (compname == null || compname.equals("")) {
+      compname = host+":"+port;
+    }
   }
 
   //
@@ -837,7 +866,7 @@ public class VncViewer extends java.applet.Applet
   //
 
   synchronized public void disconnect() {
-    System.out.println("Disconnect");
+    System.out.println("Disconnect on "+ compname);
 
     if (rfb != null && !rfb.closed())
       rfb.close();
@@ -848,7 +877,7 @@ public class VncViewer extends java.applet.Applet
       rec.dispose();
 
     if (inAnApplet) {
-      showMessage("Disconnected");
+      showMessage("Disconnected "+ compname);
     }
     else if (inSeparateFrame) {
       System.exit(0);
