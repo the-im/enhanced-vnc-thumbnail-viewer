@@ -23,7 +23,10 @@
 // VNCViewer desktop window.
 //
 
-/*
+/**
+ * Enhanced VNC Thumbnail Viewer 1.4.0
+ *      - Label by theme
+ *      
  * Enhanced VNC Thumbnail Viewer 1.001
  *      - Enable disconnect button since start
  *      - Moved disconnect condition in actionPerformed() to EnhancedVncThumbnailViewer class
@@ -92,6 +95,7 @@ class ButtonPanel extends Panel implements ActionListener {
     removeButton.addActionListener(this);
     compnameLabel = new Label("      "+ compname);
     compnameLabel.setFont(new Font("Helvetica", Font.BOLD, 14));
+    compnameLabel.setForeground(Color.decode(ThemeSetting.get("main.viewer.font-color")));
     add(compnameLabel); 
   }
 

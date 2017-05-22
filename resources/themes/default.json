@@ -1,0 +1,9 @@
+{
+    "name": "Default",
+    "main": {
+        "viewer": {
+            "background-color": "#FFFFFF",
+            "font-color": "#000000"
+        }
+    }
+}

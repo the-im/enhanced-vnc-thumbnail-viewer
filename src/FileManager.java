@@ -1,4 +1,7 @@
 /* *
+ * Enhanced VNC Thumbnail Viewer 1.4.0
+ *  - Added load & save file of theme feature
+
  * Enhanced VNC Thumbnail Viewer 1.003
  *  - Added load & save file of screen capture feature
  * 
@@ -42,7 +45,7 @@ public class FileManager {
         // this returns false even if there is a problem reading the file
     }
 
-    public static void loadFile(String filename, String encPassword, VncViewersList viewersList) {
+    public static void loadFile(String filename, String encPassword, EnhancedVncThumbnailViewer evnctv) {
         try {
             File file = new File(filename);
             URL url = file.toURL();
@@ -71,7 +74,7 @@ public class FileManager {
                         IXMLElement e = (IXMLElement) enm.nextElement();
 
                         if (e.getFullName().equalsIgnoreCase("Connection")) {
-                            parseConnection(e, encrypted, encPassword, viewersList);
+                            parseConnection(e, encrypted, encPassword, evnctv.getViewerList());
                         } else {
                             System.out.println("Load: Ignoring " + e.getFullName());
                         }
@@ -86,7 +89,7 @@ public class FileManager {
                                 IXMLElement e2 = (IXMLElement) enm2.nextElement();
 
                                 if (e2.getFullName().equalsIgnoreCase("Connection")) {
-                                    parseConnection(e2, encrypted, encPassword, viewersList);
+                                    parseConnection(e2, encrypted, encPassword, evnctv.getViewerList());
                                 } else {
                                     System.out.println("Load: Ignoring " + e2.getFullName());
                                 }
@@ -104,6 +107,10 @@ public class FileManager {
                                 } else if (e2.getFullName().equalsIgnoreCase("ScreenCapture")) {
                                     // Added on evnctv 1.003
                                     initSettings(e2, encrypted, encPassword, "ScreenCapture");
+                                } else if (e2.getFullName().equalsIgnoreCase("Theme")) {
+                                    // Added on evnctv 1.4.0
+                                    initSettings(e2, encrypted, encPassword, "Theme");
+                                    evnctv.setGuiTheme();
                                 } else {
                                     System.out.println("Load: Ignoring " + e2.getFullName());
                                 }
@@ -172,6 +179,9 @@ public class FileManager {
                         e.getAttribute("Time", "")));
 
                 System.out.println("Load recent settings list...");
+            } else if (child.equals("Theme")) {
+                ThemeSetting.use(e.getAttribute("Name", "Default"));
+                System.out.println("Load theme settings...");
             }
 
             return true;
@@ -285,6 +295,62 @@ public class FileManager {
         manifest.setAttribute("Encrypted", (isEncrypted ? "1" : "0"));
         manifest.setAttribute("Version", EnhancedVncThumbnailViewer.VERSION);
 
+        // Settings element
+        IXMLElement settings = new XMLElement("Settings");
+        manifest.addChild(settings);
+
+        // Proxy child
+        IXMLElement proxy = settings.createElement("Proxy");
+        proxy.setAttribute("Server", ProxySetting.getServer());
+        proxy.setAttribute("Port", ProxySetting.getPort() + "");
+        proxy.setAttribute("Enable", ProxySetting.getIsEnable() ? "1" : "0");
+        settings.addChild(proxy);
+
+        // Login child
+        IXMLElement login = settings.createElement("Login");
+        login.setAttribute("Username", LoginSetting.getUsername());
+        login.setAttribute("Password", isEncrypted
+                ? DesCipher.encryptData(LoginSetting.getPassword(), encPassword) : LoginSetting.getPassword());
+        login.setAttribute("Enable", LoginSetting.getIsEnable() ? "1" : "0");
+        login.setAttribute("Remember", LoginSetting.getIsRemember() ? "1" : "0");
+        settings.addChild(login);
+
+        // Slideshow child
+        IXMLElement slideShow = settings.createElement("Slideshow");
+        slideShow.setAttribute("Delay", SlideshowSetting.getDelay() + "");
+        settings.addChild(slideShow);
+        
+        // Added on evnctv 1.003 - Screen capture child
+        IXMLElement screenCapture = settings.createElement("ScreenCapture");
+        screenCapture.setAttribute("Delay", ScreenCaptureSetting.getDelay() + "");
+        screenCapture.setAttribute("Path", ScreenCaptureSetting.getPath());
+        screenCapture.setAttribute("Enable", ScreenCaptureSetting.getIsEnable() ? "1" : "0");
+        settings.addChild(screenCapture);
+        
+        // Added on evnctv 1.4.0 - Theme
+        IXMLElement theme = settings.createElement("Theme");
+        theme.setAttribute("Name", ThemeSetting.getName());
+        settings.addChild(theme);
+
+        // Recent settings element
+        if (RecentSettingsList.getTotalRecents().size() > 0) {
+            IXMLElement recentSettings = new XMLElement("RecentSettings");
+            manifest.addChild(recentSettings);
+
+            // Recent child
+            Enumeration enm = RecentSettingsList.getTotalRecents().elements();
+            while (enm.hasMoreElements()) {
+                RecentSetting rs = (RecentSetting) enm.nextElement();
+
+                IXMLElement recent = settings.createElement("Recent");
+                recent.setAttribute("Title", rs.getTitle());
+                recent.setAttribute("Type", rs.getType());
+                recent.setAttribute("Date", rs.getDate());
+                recent.setAttribute("Time", rs.getTime());
+                recentSettings.addChild(recent);
+            }
+        }
+        
         // Connections element
         if (!viewersList.isEmpty()) {
             IXMLElement connections = new XMLElement("Connections");
@@ -333,57 +399,6 @@ public class FileManager {
                     }
                 }
                 c.setAttribute("CompName", compname);
-            }
-        }
-
-        // Settings element
-        IXMLElement settings = new XMLElement("Settings");
-        manifest.addChild(settings);
-
-        // Proxy child
-        IXMLElement proxy = settings.createElement("Proxy");
-        proxy.setAttribute("Server", ProxySetting.getServer());
-        proxy.setAttribute("Port", ProxySetting.getPort() + "");
-        proxy.setAttribute("Enable", ProxySetting.getIsEnable() ? "1" : "0");
-        settings.addChild(proxy);
-
-        // Login child
-        IXMLElement login = settings.createElement("Login");
-        login.setAttribute("Username", LoginSetting.getUsername());
-        login.setAttribute("Password", isEncrypted
-                ? DesCipher.encryptData(LoginSetting.getPassword(), encPassword) : LoginSetting.getPassword());
-        login.setAttribute("Enable", LoginSetting.getIsEnable() ? "1" : "0");
-        login.setAttribute("Remember", LoginSetting.getIsRemember() ? "1" : "0");
-        settings.addChild(login);
-
-        // Slideshow child
-        IXMLElement slideShow = settings.createElement("Slideshow");
-        slideShow.setAttribute("Delay", SlideshowSetting.getDelay() + "");
-        settings.addChild(slideShow);
-        
-        // Added on evnctv 1.003 - Screen capture child
-        IXMLElement screenCapture = settings.createElement("ScreenCapture");
-        screenCapture.setAttribute("Delay", ScreenCaptureSetting.getDelay() + "");
-        screenCapture.setAttribute("Path", ScreenCaptureSetting.getPath());
-        screenCapture.setAttribute("Enable", ScreenCaptureSetting.getIsEnable() ? "1" : "0");
-        settings.addChild(screenCapture);
-
-        // Recent settings element
-        if (RecentSettingsList.getTotalRecents().size() > 0) {
-            IXMLElement recentSettings = new XMLElement("RecentSettings");
-            manifest.addChild(recentSettings);
-
-            // Recent child
-            Enumeration enm = RecentSettingsList.getTotalRecents().elements();
-            while (enm.hasMoreElements()) {
-                RecentSetting rs = (RecentSetting) enm.nextElement();
-
-                IXMLElement recent = settings.createElement("Recent");
-                recent.setAttribute("Title", rs.getTitle());
-                recent.setAttribute("Type", rs.getType());
-                recent.setAttribute("Date", rs.getDate());
-                recent.setAttribute("Time", rs.getTime());
-                recentSettings.addChild(recent);
             }
         }
 

@@ -25,7 +25,10 @@
 // a VNC desktop.
 //
 
-/*
+/**
+ * Enhanced VNC Thumbnail Viewer 1.4.0
+ *      - Label by theme
+ * 
  * Enhanced VNC Thumbnail Viewer 1.001
  *      - Called proxy setting from Setting class
  * 
@@ -411,6 +414,7 @@ public class VncViewer extends java.applet.Applet
     if (connStatusLabel == null) {
       connStatusLabel = new Label("Status: " + msg);
       connStatusLabel.setFont(new Font("Helvetica", Font.PLAIN, 12));
+      connStatusLabel.setForeground(Color.decode(ThemeSetting.get("main.viewer.font-color")));
     } else {
       connStatusLabel.setText("Status: " + msg);
     }

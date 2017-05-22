@@ -31,7 +31,10 @@
  * on http://code.google.com/p/vncthumbnailviewer/source/checkout
  * --------------------------------------------------------------------
  * Abbreviation of Enhanced VNC Thumbnail Viewer is evnctv ***
- * 
+ *
+ * Enhanced VNC Thumbnail Viewer 1.4.0
+ *  - Added theme feature
+ *
  * Enhanced VNC Thumbnail Viewer 1.003
  *  - Added screen capture feature
  *  - No case-sensitive for searching
@@ -65,7 +68,6 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
-import java.lang.Math.*;
 import javax.swing.*;
 
 public class EnhancedVncThumbnailViewer extends Frame
@@ -124,7 +126,7 @@ public class EnhancedVncThumbnailViewer extends Frame
 
     }
 
-    public final static String VERSION = "1.003";
+    public final static String VERSION = "1.4.0";
     public final static String PROGRAM_NAME = "Enhanced VNC Thumbnail Viewer";
     
     private VncViewersList viewersList, viewersSearchList;
@@ -189,7 +191,7 @@ public class EnhancedVncThumbnailViewer extends Frame
         naviPanel = new JPanel(new GridLayout(1, 2));
         viewerPanel = new JPanel(new GridLayout(2, 2));
         naviPanel.setBackground(Color.gray);
-        viewerPanel.setBackground(Color.white);
+        viewerPanel.setBackground(Color.decode(ThemeSetting.get("main.viewer.background-color")));
         add(naviPanel, BorderLayout.NORTH);
         add(viewerPanel, BorderLayout.CENTER);
 
@@ -258,6 +260,7 @@ public class EnhancedVncThumbnailViewer extends Frame
         soloViewer = new Frame();
         soloViewer.setIconImage(Toolkit.getDefaultToolkit().getImage("icon.png")); // Added on evnctv 1.001
         soloViewer.setSize(GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().getSize());
+        soloViewer.setBackground(Color.decode(ThemeSetting.get("main.viewer.background-color")));
         soloViewer.addWindowListener(this);
         soloViewer.addComponentListener(this);
         soloViewer.validate();
@@ -493,9 +496,9 @@ public class EnhancedVncThumbnailViewer extends Frame
             } else {
                 if (FileManager.isHostsFileEncrypted(dir + file)) {
                     HostsFilePasswordDialog pd = new HostsFilePasswordDialog(this, false);
-                    FileManager.loadFile(dir + file, pd.getPassword(), viewersList);
+                    FileManager.loadFile(dir + file, pd.getPassword(), this);
                 } else {
-                    FileManager.loadFile(dir + file, "", viewersList);
+                    FileManager.loadFile(dir + file, "", this);
                 }
             }
         }
@@ -920,4 +923,14 @@ public class EnhancedVncThumbnailViewer extends Frame
 
         enableNaviButton();
     }
+    
+    public void setGuiTheme() {
+        viewerPanel.setBackground(Color.decode(ThemeSetting.get("main.viewer.background-color")));
+        soloViewer.setBackground(Color.decode(ThemeSetting.get("main.viewer.background-color")));
+    }
+    
+    public VncViewersList getViewerList() {
+        return viewersList;
+    }
+    
 }
