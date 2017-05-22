@@ -18,6 +18,9 @@
 //
 
 /*
+ * Enhanced VNC Thumbnail Viewer 1.001
+ *      - Called proxy setting from Setting class
+ * 
  * Enhanced VNC Thumbnail Viewer 1.0
  *      - New methods -> launchViewer()
  */
@@ -37,28 +40,16 @@ import java.net.*;//TEMP
 
 class VncViewersList extends Vector {
     
-  private VncThumbnailViewer tnViewer;
-  private static ProxyData proxyData;
+  private EnhancedVncThumbnailViewer tnViewer;
 
   //
   // Constructor.
   //
-  public VncViewersList(VncThumbnailViewer v)
+  public VncViewersList(EnhancedVncThumbnailViewer v)
   {
     super();
     tnViewer = v;
   }
-  
-  //
-  // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
-  //
-  public VncViewersList(VncThumbnailViewer v, ProxyData pd){
-    super();
-    tnViewer = v;
-    proxyData = pd;
-  }
-
-  
 
   public static boolean isHostsFileEncrypted(String filename) {
     boolean encrypted = false;
@@ -235,7 +226,7 @@ class VncViewersList extends Vector {
 
     IXMLElement manifest = new XMLElement("Manifest");
     manifest.setAttribute("Encrypted", (isEncrypted? "1" : "0") );
-    manifest.setAttribute("Version", VncThumbnailViewer.VERSION);
+    manifest.setAttribute("Version", EnhancedVncThumbnailViewer.VERSION);
     
     ListIterator l = listIterator();
     while(l.hasNext()) {
@@ -323,7 +314,7 @@ class VncViewersList extends Vector {
   }
   
 
-  public static VncViewer launchViewer(VncThumbnailViewer tnviewer, String host, int port, String password, String user, String userdomain, String compname) {
+  public static VncViewer launchViewer(EnhancedVncThumbnailViewer tnviewer, String host, int port, String password, String user, String userdomain, String compname) {
     String args[] = new String[4];
     args[0] = "host";
     args[1] = host;
@@ -369,7 +360,7 @@ class VncViewersList extends Vector {
     // launch a new viewer
     System.out.println("Launch Host: " + host + ":" + port);
     //VncViewer v = new VncViewer();
-    VncViewer v = new VncViewer(proxyData);
+    VncViewer v = new VncViewer();
     v.mainArgs = args;
     v.inAnApplet = false;
     v.inSeparateFrame = false;

@@ -1,4 +1,7 @@
 /*
+ * Enhanced VNC Thumbnail Viewer 1.001
+ *      - Added KeyListener
+ * 
  * Enhanced VNC Thumbnail Viewer 1.0
  * Login dialog will be shown on start up
  * Also it can be set disable by going to Setting menu -> Login
@@ -9,16 +12,16 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
-class LoginDialog extends JDialog implements ActionListener {
+class LoginDialog extends JDialog implements ActionListener, KeyListener {
 
-    VncThumbnailViewer tnviewer;
+    EnhancedVncThumbnailViewer tnviewer;
     LoginSettingDialog loginSettingDialog;
     JTextField usernameField;
     JPasswordField passwordField;
     JButton loginButton, cancelButton;
     JLabel errorLabel;
 
-    public LoginDialog(VncThumbnailViewer tnviewer) {
+    public LoginDialog(EnhancedVncThumbnailViewer tnviewer) {
         super(tnviewer, true);
         this.tnviewer = tnviewer;
         loginSettingDialog = new LoginSettingDialog(tnviewer);
@@ -36,6 +39,8 @@ class LoginDialog extends JDialog implements ActionListener {
 
         loginButton.addActionListener(this);
         cancelButton.addActionListener(this);
+        usernameField.addKeyListener(this); // Added on evnctv 1.001
+        passwordField.addKeyListener(this); // Added on evnctv 1.001
 
         c.gridwidth = GridBagConstraints.REMAINDER;
 
@@ -49,7 +54,7 @@ class LoginDialog extends JDialog implements ActionListener {
         add(passwordField);
         add(cancelButton);
         add(loginButton);
-        
+
         setTitle("Login");
 
         Point loc = tnviewer.getLocation();
@@ -63,29 +68,47 @@ class LoginDialog extends JDialog implements ActionListener {
         setResizable(false);
         setVisible(true);
     }
-    
-    private boolean checkPassword(String user, String pass){
-        LoginData loginData = loginSettingDialog.readFile();
-        if(loginData.getUsername().equals(user) && loginData.getPassword().equals(pass)){
+
+    private boolean checkPassword(String user, String pass) {
+        if (Setting.getLoginData().getUsername().equals(user) && Setting.getLoginData().getPassword().equals(pass)) {
             return true;
-        }else{
+        } else {
             return false;
+        }
+    }
+    // Added on evnctv 1.001
+    private void checkLogin() {
+        if (checkPassword(usernameField.getText(), passwordField.getText())) {
+            this.dispose();
+        } else {
+            JOptionPane.showConfirmDialog(this, "Invalid Username/Password", "error", JOptionPane.DEFAULT_OPTION);
         }
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == loginButton) {
-            if(checkPassword(usernameField.getText(),passwordField.getText())){
-                this.dispose();
-            }
-            else{
-                JOptionPane.showConfirmDialog(this, "Invalid Username/Password", "error", JOptionPane.DEFAULT_OPTION);
-            }
+            checkLogin();
         }
         if (e.getSource() == cancelButton) {
             tnviewer.quit();
             this.dispose();
         }
+    }
+
+    // Added on evnctv 1.001
+    @Override
+    public void keyTyped(KeyEvent e) {
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if (KeyEvent.VK_ENTER == e.getKeyCode()) {
+            checkLogin();
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
     }
 }

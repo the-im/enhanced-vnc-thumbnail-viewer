@@ -18,180 +18,198 @@
 //
 
 /*
+ * Enhanced VNC Thumbnail Viewer 1.001
+ *      - Added KeyListener
+ * 
  * Enhanced VNC Thumbnail Viewer 1.0
- *      - Add computer name field
- *      - Change UI from awt to swing
+ *      - Added computer name field
+ *      - Changed UI from awt to swing
  */
-
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
 //
-// The Dialog is used to add another host to VncThumbnailViewer
+// The Dialog is used to add another host to EnhancedVncThumbnailViewer
 //
+class AddHostDialog extends JDialog implements ActionListener, ItemListener, KeyListener {
 
-class AddHostDialog extends JDialog implements ActionListener, ItemListener {
+    static String readEncPassword(String encPass) {
+        if (encPass.length() != 16) {
+            // FIX-ME: change this, to something that's easier to detect
+            //throw new Exception("VNC Enc. Passwords must be 16 chars");
+            System.out.println("VNC Enc. Passwords must be 16 chars");
+            return encPass;
+        }
 
-  static String readEncPassword(String encPass) {
-    if(encPass.length() != 16) {
-      // FIX-ME: change this, to something that's easier to detect
-      //throw new Exception("VNC Enc. Passwords must be 16 chars");
-      System.out.println("VNC Enc. Passwords must be 16 chars");
-      return encPass;
+        byte[] pw = {0, 0, 0, 0, 0, 0, 0, 0};
+        int len = encPass.length() / 2;
+        if (len > 8) {
+            len = 8;
+        }
+        for (int i = 0; i < len; i++) {
+            String hex = encPass.substring(i * 2, i * 2 + 2);
+            Integer x = new Integer(Integer.parseInt(hex, 16));
+            pw[i] = x.byteValue();
+        }
+        byte[] key = {23, 82, 107, 6, 35, 78, 88, 7};
+        DesCipher des = new DesCipher(key);
+        des.decrypt(pw, 0, pw, 0);
+        return new String(pw);
     }
-    
-    byte[] pw = {0, 0, 0, 0, 0, 0, 0, 0};
-    int len = encPass.length() / 2;
-    if(len > 8) {
-      len = 8;
-    }
-    for(int i = 0; i < len; i++) {
-      String hex = encPass.substring(i*2, i*2+2);
-      Integer x = new Integer(Integer.parseInt(hex, 16));
-      pw[i] = x.byteValue();
-    }
-    byte[] key = {23, 82, 107, 6, 35, 78, 88, 7};
-    DesCipher des = new DesCipher(key);
-    des.decrypt(pw, 0, pw, 0);
-    return new String(pw);
-  }
+    EnhancedVncThumbnailViewer tnviewer;
+    JTextField hostField;
+    JTextField portField;
+    JTextField usernameField;
+    JPasswordField passwordField;
+    Choice authChoice;
+    JButton connectButton;
+    JButton cancelButton;
+    // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
+    JTextField compnameField;
 
+    //
+    // Constructor.
+    //
+    public AddHostDialog(EnhancedVncThumbnailViewer tnviewer) {
+        super(tnviewer, true);
+        this.tnviewer = tnviewer;
 
-  VncThumbnailViewer tnviewer;
+        // GUI Stuff:
+        setResizable(false);
+        GridBagLayout gridbag = new GridBagLayout();
+        GridBagConstraints c = new GridBagConstraints();
+        setLayout(gridbag);
 
-  JTextField hostField;
-  JTextField portField;
-  JTextField usernameField;
-  JPasswordField passwordField;
-  Choice authChoice;
-  JButton connectButton;
-  JButton cancelButton;
-  
-  // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
-  JTextField compnameField;
+        setFont(new Font("Helvetica", Font.PLAIN, 14));
 
-  //
-  // Constructor.
-  //
+        hostField = new JTextField("", 10);
+        portField = new JTextField("5900", 10);
+        usernameField = new JTextField("", 10);
+        usernameField.enable(false); // not needed by default
+        passwordField = new JPasswordField("", 10);
+        passwordField.enable(false); // not needed by default
 
-  public AddHostDialog(VncThumbnailViewer tnviewer)
-  {
-    super(tnviewer, true);
-    this.tnviewer = tnviewer;
-    
-    // GUI Stuff:
-    setResizable(false);
-    GridBagLayout gridbag = new GridBagLayout();
-    GridBagConstraints c = new GridBagConstraints();
-    setLayout(gridbag);
-    
-    setFont(new Font("Helvetica", Font.PLAIN, 14));
-    
-    hostField = new JTextField("", 10);
-    portField = new JTextField("5900", 10);
-    usernameField = new JTextField("", 10);
-    usernameField.enable(false); // not needed by default
-    passwordField = new JPasswordField("", 10);
-    passwordField.enable(false); // not needed by default
-    
-    compnameField = new JTextField("", 10); // Added on version 2.0 ***
+        compnameField = new JTextField("", 10); // Added on evnctv 1.0 ***
 
-    authChoice = new Choice();
-    authChoice.addItemListener(this);
-    authChoice.add("(none)");
-    authChoice.add("Password");
-    authChoice.add("VNC Enc. Password");
-    authChoice.add("MS-Logon");
-    
-    connectButton = new JButton("Connect...");
-    cancelButton = new JButton("Cancel");
-    connectButton.addActionListener(this);
-    cancelButton.addActionListener(this);
+        authChoice = new Choice();
+        authChoice.addItemListener(this);
+        authChoice.add("(none)");
+        authChoice.add("Password");
+        authChoice.add("VNC Enc. Password");
+        authChoice.add("MS-Logon");
 
-    // End of Row Components:
-    c.gridwidth = GridBagConstraints.REMAINDER; //end row
-    gridbag.setConstraints(authChoice, c);
-    gridbag.setConstraints(hostField, c);
-    gridbag.setConstraints(portField, c);
-    gridbag.setConstraints(compnameField, c); // Added on version 2.0 ***
-    gridbag.setConstraints(usernameField, c);
-    gridbag.setConstraints(passwordField, c);
-    gridbag.setConstraints(connectButton, c);
-    
-    add(new JLabel("Host", JLabel.RIGHT));
-    add(hostField);
-    add(new JLabel("Port", JLabel.RIGHT));
-    add(portField);
-    add(new JLabel("Computer Name", JLabel.RIGHT));
-    add(compnameField);
-    add(new JLabel("Authentication:", JLabel.RIGHT));
-    add(authChoice);
-    add(new JLabel("Username", JLabel.RIGHT));
-    add(usernameField);
-    add(new JLabel("Password", JLabel.RIGHT));
-    add(passwordField);
-    add(cancelButton);
-    add(connectButton);
-    
-    setTitle("Add new host"); // Added on version 2.0 ***
-    
-    Point loc = tnviewer.getLocation();
-    Dimension dim = tnviewer.getSize();
-    loc.x += (dim.width/2)-50;
-    loc.y += (dim.height/2)-50;
-    setLocation(loc);
-    pack();
-    validate();
-    setVisible(true);
-  }
+        connectButton = new JButton("Connect...");
+        cancelButton = new JButton("Cancel");
+        
+        connectButton.addActionListener(this);
+        cancelButton.addActionListener(this);
+        
+        // Added on evnctv 1.001
+        hostField.addKeyListener(this);
+        portField.addKeyListener(this);
+        usernameField.addKeyListener(this);
+        passwordField.addKeyListener(this);
+        compnameField.addKeyListener(this);
+        authChoice.addKeyListener(this);
 
+        // End of Row Components:
+        c.gridwidth = GridBagConstraints.REMAINDER; //end row
+        gridbag.setConstraints(authChoice, c);
+        gridbag.setConstraints(hostField, c);
+        gridbag.setConstraints(portField, c);
+        gridbag.setConstraints(compnameField, c); // Added on evnctv 1.0 ***
+        gridbag.setConstraints(usernameField, c);
+        gridbag.setConstraints(passwordField, c);
+        gridbag.setConstraints(connectButton, c);
 
-  void callAddHost() {
-    String host = hostField.getText();
-    int port = Integer.parseInt(portField.getText());
-    
-    // Password:
-    String pass = passwordField.getText();
+        add(new JLabel("Host", JLabel.RIGHT));
+        add(hostField);
+        add(new JLabel("Port", JLabel.RIGHT));
+        add(portField);
+        add(new JLabel("Computer Name", JLabel.RIGHT));
+        add(compnameField);
+        add(new JLabel("Authentication:", JLabel.RIGHT));
+        add(authChoice);
+        add(new JLabel("Username", JLabel.RIGHT));
+        add(usernameField);
+        add(new JLabel("Password", JLabel.RIGHT));
+        add(passwordField);
+        add(cancelButton);
+        add(connectButton);
 
-    // MS-Logon:
-    String user = usernameField.getText();
+        setTitle("Add new host"); // Added on version 2.0 ***
 
-    // Encrypted Password:
-    if(authChoice.getSelectedItem() == "VNC Enc. Password") {
-      pass = readEncPassword(pass);
-    }    
-    
-    // Computer name:
-    String compname = compnameField.getText();
-    
-    tnviewer.launchViewer(host, port, pass, user, compname);
-  }
-  
-
-  // Action Listener Event:
-  public void actionPerformed(ActionEvent evt) {
-    if(evt.getSource() == connectButton) {
-      callAddHost();
+        Point loc = tnviewer.getLocation();
+        Dimension dim = tnviewer.getSize();
+        loc.x += (dim.width / 2) - 50;
+        loc.y += (dim.height / 2) - 50;
+        setLocation(loc);
+        pack();
+        validate();
+        setVisible(true);
     }
 
-    this.dispose();
-  }
-  
-  
-  public void itemStateChanged(ItemEvent e) {
-    if(authChoice.getSelectedItem() == "(none)") {
-      passwordField.enable(false);
-    } else {
-      passwordField.enable(true);
+    void callAddHost() {
+        String host = hostField.getText();
+        int port = Integer.parseInt(portField.getText());
+
+        // Password:
+        String pass = passwordField.getText();
+
+        // MS-Logon:
+        String user = usernameField.getText();
+
+        // Encrypted Password:
+        if (authChoice.getSelectedItem() == "VNC Enc. Password") {
+            pass = readEncPassword(pass);
+        }
+
+        // Computer name:
+        String compname = compnameField.getText();
+
+        tnviewer.launchViewer(host, port, pass, user, compname);
     }
 
-    if(authChoice.getSelectedItem() == "MS-Logon") {
-      usernameField.enable(true);
-    } else {
-      usernameField.enable(false);
-    }
-  }
-  
+    // Action Listener Event:
+    public void actionPerformed(ActionEvent evt) {
+        if (evt.getSource() == connectButton) {
+            callAddHost();
+        }
 
+        this.dispose();
+    }
+
+    public void itemStateChanged(ItemEvent e) {
+        if (authChoice.getSelectedItem() == "(none)") {
+            passwordField.enable(false);
+        } else {
+            passwordField.enable(true);
+        }
+
+        if (authChoice.getSelectedItem() == "MS-Logon") {
+            usernameField.enable(true);
+        } else {
+            usernameField.enable(false);
+        }
+    }
+
+    /*
+     * Added on evnctv 1.001
+     */
+    @Override
+    public void keyTyped(KeyEvent e) {
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if (KeyEvent.VK_ENTER == e.getKeyCode()) {
+            callAddHost();
+            this.dispose();
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+    }
 }

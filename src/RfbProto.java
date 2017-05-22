@@ -24,6 +24,9 @@
 //
 
 /*
+ * Enhanced VNC Thumbnail Viewer 1.001
+ *      - Called proxy setting from Setting class
+ * 
  * Enhanced VNC Thumbnail Viewer 1.0
  *      - SOCKS5 is available
  */
@@ -215,7 +218,6 @@ class RfbProto {
   
   // New attributes
   Proxy proxy;
-  ProxyData proxyData;
   
 
   //
@@ -254,19 +256,18 @@ class RfbProto {
   //
   // Modified on Enhanced VNC Thumbnail Viewer 1.0
   //
-  RfbProto(String h, int p, VncViewer v, ProxyData pd) throws IOException {
+  RfbProto(String h, int p, VncViewer v) throws IOException {
     viewer = v;
     host = h;
     port = p;
-    proxyData = pd;
 
     if (viewer.socketFactory == null) {
         // Connect via proxy: socks5
-        if(proxyData.getIsProxy()){
-            proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(proxyData.getHost(), proxyData.getPort()));
+        if(Setting.getProxyData().getIsProxy()){
+            proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(Setting.getProxyData().getHost(), Setting.getProxyData().getPort()));
             sock = new Socket(proxy);
             sock.connect(new InetSocketAddress(host, port));
-            System.out.println("Status: Connecting SOCKS5 on "+ proxyData.getHost() +":"+ proxyData.getPort() +"...");
+            System.out.println("Status: Connecting SOCKS5 on "+ Setting.getProxyData().getHost() +":"+ Setting.getProxyData().getPort() +"...");
         }
         // Connnect via no proxy
         else{

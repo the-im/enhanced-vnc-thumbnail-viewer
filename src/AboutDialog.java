@@ -11,11 +11,11 @@ import javax.swing.*;
 
 public class AboutDialog extends JDialog implements ActionListener{
     
-    VncThumbnailViewer tnviewer;
+    EnhancedVncThumbnailViewer tnviewer;
     JButton okButton;
     JLabel programNameLabel, versionLabel;
     
-    public AboutDialog(VncThumbnailViewer tnviewer) {
+    public AboutDialog(EnhancedVncThumbnailViewer tnviewer) {
         super(tnviewer, true);
         this.tnviewer = tnviewer;
 
@@ -25,8 +25,8 @@ public class AboutDialog extends JDialog implements ActionListener{
         GridBagConstraints c = new GridBagConstraints();
         setLayout(gridbag);
 
-        programNameLabel = new JLabel(VncThumbnailViewer.PROGRAM_NAME);
-        versionLabel = new JLabel("Version "+ VncThumbnailViewer.VERSION);
+        programNameLabel = new JLabel(EnhancedVncThumbnailViewer.PROGRAM_NAME);
+        versionLabel = new JLabel("Version "+ EnhancedVncThumbnailViewer.VERSION);
         okButton = new JButton("OK");
         
         programNameLabel.setFont(new Font("Helvetica", Font.BOLD, 12));

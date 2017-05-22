@@ -6,7 +6,7 @@
 class SearchList{
     VncViewersList viewersList, viewersSearchList;
     
-    public SearchList(VncThumbnailViewer v){
+    public SearchList(EnhancedVncThumbnailViewer v){
         viewersSearchList = new VncViewersList(v);
     }
     

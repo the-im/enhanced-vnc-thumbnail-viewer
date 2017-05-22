@@ -26,6 +26,9 @@
 //
 
 /*
+ * Enhanced VNC Thumbnail Viewer 1.001
+ *      - Called proxy setting from Setting class
+ * 
  * Enhanced VNC Thumbnail Viewer 1.0
  *      - Display computer name
  */
@@ -97,21 +100,6 @@ public class VncViewer extends java.applet.Applet
 
   // Reference to this applet for inter-applet communication.
   public static java.applet.Applet refApplet;
-  
-  //New attributes
-  ProxyData proxyData;
-  
-  
-  //
-  // New constructors
-  //
-  public VncViewer(){}
-  
-  public VncViewer(ProxyData pd){
-      proxyData = pd;
-  }
-  
-  
 
   //
   // init()
@@ -345,7 +333,7 @@ public class VncViewer extends java.applet.Applet
     showConnectionStatus("Connecting to " + host + ", port " + port + "...");
 
     //rfb = new RfbProto(host, port, this);
-    rfb = new RfbProto(host, port, this, proxyData);
+    rfb = new RfbProto(host, port, this);
     showConnectionStatus("Connected to server");
 
     rfb.readVersionMsg();

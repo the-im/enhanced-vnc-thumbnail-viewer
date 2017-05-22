@@ -24,6 +24,11 @@
 //
 
 /*
+ * Enhanced VNC Thumbnail Viewer 1.001
+ *      - Enable disconnect button since start
+ *      - Moved disconnect condition in actionPerformed() to EnhancedVncThumbnailViewer class
+ *      - Cancelled renew disconnect button in disableButtonsOnDisconnect() 
+ * 
  * Enhanced VNC Thumbnail Viewer 1.0
  *      - New attributes & methods
  *      - Modified methods
@@ -56,7 +61,7 @@ class ButtonPanel extends Panel implements ActionListener {
 
     setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
     disconnectButton = new Button("Disconnect");
-    disconnectButton.setEnabled(false);
+    disconnectButton.setEnabled(true); // Modified on evnctv 1.001
     add(disconnectButton);
     disconnectButton.addActionListener(this);
     optionsButton = new Button("Options");
@@ -95,7 +100,7 @@ class ButtonPanel extends Panel implements ActionListener {
   //
 
   public void enableButtons() {
-    disconnectButton.setEnabled(true);
+    // disconnectButton.setEnabled(true); // Cancelled on evnctv 1.001
     clipboardButton.setEnabled(true);
     refreshButton.setEnabled(true);
   }
@@ -105,12 +110,13 @@ class ButtonPanel extends Panel implements ActionListener {
   //
 
   public void disableButtonsOnDisconnect() {
-    remove(disconnectButton);
+    /*remove(disconnectButton);
     disconnectButton = new Button("Reconnect"); // Modified on Enhanced VNC Thumbnail Viewer 1.0 ***
     disconnectButton.setEnabled(true);
     add(disconnectButton, 0);
-    disconnectButton.addActionListener(this);
-
+    disconnectButton.addActionListener(this);*/
+    disconnectButton.setLabel("Reconnect"); // Added on evnctv 1.001
+    
     optionsButton.setEnabled(false);
     clipboardButton.setEnabled(false);
     ctrlAltDelButton.setEnabled(false);
@@ -136,10 +142,13 @@ class ButtonPanel extends Panel implements ActionListener {
 
     viewer.moveFocusToDesktop();
 
-    if (evt.getSource() == disconnectButton) {
+    // Cancelled on evnctv 1.001
+    /*if (evt.getSource() == disconnectButton) {
       viewer.disconnect();
 
-    } else if (evt.getSource() == optionsButton) {
+    } else*/ 
+    
+    if (evt.getSource() == optionsButton) {
       viewer.options.setVisible(!viewer.options.isVisible());
 
     } else if (evt.getSource() == recordButton) {
