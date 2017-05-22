@@ -1,11 +1,14 @@
-/*
+/* *
+ * Enhanced VNC Thumbnail Viewer 1.002
+ *  - Added recent settings logs
+ * 
  * Enhanced VNC Thumbnail Viewer 1.001
- *      - Moved readFile(), writeFile() method to ProxyIO class
- *      - Added KeyListener
+ *  - Moved readFile(), writeFile() method to ProxyIO class
+ *  - Added KeyListener
  * 
  * Enhanced VNC Thumbnail Viewer 1.0
- * To access this dialog just going to Settings menu -> Proxy
- * You can choose how to connect to vnc server via SOCKS5 or not
+ *  - To access this dialog just going to Settings menu -> Proxy
+ *  - You can choose how to connect to vnc server via SOCKS5 or not
  * 
  */
 
@@ -15,26 +18,19 @@ import javax.swing.*;
 
 public class ProxySettingDialog extends JDialog implements ActionListener, KeyListener {
 
-    EnhancedVncThumbnailViewer tnviewer;
-    JTextField hostField, portField;
-    JButton okButton, cancelButton;
-    JRadioButton noProxyRadio, socks5Radio;
-    JLabel errorLabel;
+    private JTextField serverField, portField;
+    private JButton okButton, cancelButton;
+    private JRadioButton noProxyRadio, socks5Radio;
 
     public ProxySettingDialog(EnhancedVncThumbnailViewer tnviewer) {
         super(tnviewer, true);
-        this.tnviewer = tnviewer;
 
-        // GUI Stuff:
-        GridBagLayout gridbag = new GridBagLayout();
-        GridBagConstraints c = new GridBagConstraints();
-        setLayout(gridbag);
-
+        // Initial components
         setFont(new Font("Helvetica", Font.PLAIN, 14));
 
         noProxyRadio = new JRadioButton("No proxy");
         socks5Radio = new JRadioButton("Use SOCKS5");
-        hostField = new JTextField("", 10);
+        serverField = new JTextField("", 10);
         portField = new JTextField("", 5);
         okButton = new JButton("OK");
         cancelButton = new JButton("Cancel");
@@ -47,15 +43,19 @@ public class ProxySettingDialog extends JDialog implements ActionListener, KeyLi
         socks5Radio.addActionListener(this);
         okButton.addActionListener(this);
         cancelButton.addActionListener(this);
-        
+
         // Added on evnctv 1.001
         noProxyRadio.addKeyListener(this);
         socks5Radio.addKeyListener(this);
-        hostField.addKeyListener(this);
+        serverField.addKeyListener(this);
         portField.addKeyListener(this);
 
-        // End of Row Components:
-        /*c.gridwidth = GridBagConstraints.REMAINDER; //end row
+        // Layout
+        GridBagLayout gridbag = new GridBagLayout();
+        setLayout(gridbag);
+        
+        /*GridBagConstraints c = new GridBagConstraints();
+        c.gridwidth = GridBagConstraints.REMAINDER; //end row
         
         gridbag.setConstraints(noProxyRadio, c);
         gridbag.setConstraints(socks5Radio, c);
@@ -63,10 +63,11 @@ public class ProxySettingDialog extends JDialog implements ActionListener, KeyLi
         gridbag.setConstraints(portField, c);
         gridbag.setConstraints(okButton, c);*/
 
+        // Add to dialog
         add(noProxyRadio);
         add(socks5Radio);
-        add(new JLabel("Host:", JLabel.RIGHT));
-        add(hostField);
+        add(new JLabel("Server:", JLabel.RIGHT));
+        add(serverField);
         add(new JLabel("Port:", JLabel.RIGHT));
         add(portField);
         add(okButton);
@@ -74,22 +75,22 @@ public class ProxySettingDialog extends JDialog implements ActionListener, KeyLi
 
         init();
 
-        setTitle("Proxy settings");
-
+        // Dialog
         Point loc = tnviewer.getLocation();
         Dimension dim = tnviewer.getSize();
         loc.x += (dim.width / 2) - 50;
         loc.y += (dim.height / 2) - 50;
         setLocation(loc);
 
+        setTitle("Proxy Settings");
         pack();
         validate();
         setResizable(false);
-        setVisible(false);
+        setVisible(true);
     }
 
     private void init() {
-        if (Setting.getProxyData().getIsProxy()) {
+        if (ProxySetting.getIsEnable()) {
             socks5Radio.setSelected(true);
         } else {
             noProxyRadio.setSelected(true);
@@ -97,36 +98,73 @@ public class ProxySettingDialog extends JDialog implements ActionListener, KeyLi
 
         enableTypeProxy();
 
-        hostField.setText(Setting.getProxyData().getHost());
-        portField.setText(Setting.getProxyData().getPort() + "");
+        serverField.setText(ProxySetting.getServer());
+        portField.setText(ProxySetting.getPort() + "");
     }
 
     private void enableTypeProxy() {
         if (noProxyRadio.isSelected()) {
-            hostField.setEnabled(false);
+            serverField.setEnabled(false);
             portField.setEnabled(false);
         } else if (socks5Radio.isSelected()) {
-            hostField.setEnabled(true);
+            serverField.setEnabled(true);
             portField.setEnabled(true);
         }
     }
 
     private void saveSetting() {
         if (noProxyRadio.isSelected()) {
-            Setting.getProxyData().setIsProxy(false);
-            ProxyIO.writeFile(Setting.getProxyData());
+            /* *
+             * Added on evnctv 1.002
+             * To save recent settings
+             */
+            // Change to no proxy
+            if (ProxySetting.getIsEnable()) {
+                String msg = "Changed to use no proxy";
+                RecentSettingsList.addRecent(new RecentSetting(msg, "Proxy"));
+                System.out.println(msg);
+            }
+            
+            
+            ProxySetting.setIsEnable(false);
             this.dispose();
-        }
-        if (socks5Radio.isSelected()) {
-            if (hostField.getText().trim().equals("") || portField.getText().trim().equals("")) {
-                JOptionPane.showConfirmDialog(this, "Please enter host/port number", "Error", JOptionPane.DEFAULT_OPTION);
+        } else if (socks5Radio.isSelected()) {
+            if (serverField.getText().trim().equals("") || portField.getText().trim().equals("")) {
+                JOptionPane.showConfirmDialog(this, "Please enter server and/or port number", "Error", JOptionPane.DEFAULT_OPTION);
             } else {
                 try {
-                    Setting.getProxyData().setHost(hostField.getText().trim());
-                    Setting.getProxyData().setPort(Integer.parseInt(portField.getText().trim()));
-                    Setting.getProxyData().setIsProxy(true);
+                    /* *
+                     * Added on evnctv 1.002
+                     * To save recent settings
+                     */
+                    String server = serverField.getText().trim();
+                    int port = Integer.parseInt(portField.getText().trim());
+                    
+                    // Change to proxy
+                    if (!ProxySetting.getIsEnable()) {
+                        String msg = "";
+                        
+                        // Change server & port
+                        if (!ProxySetting.getServer().equalsIgnoreCase(server) || ProxySetting.getPort() != port) {
+                            msg = "Changed to use SOCKS5 & changed from " + ProxySetting.getServer() + ":" + ProxySetting.getPort() + " to " + server + ":" + port;
+                        } else {
+                            msg = "Changed to use SOCKS5";
+                        }
+                        
+                        RecentSettingsList.addRecent(new RecentSetting(msg, "Proxy"));
+                        System.out.println(msg);
+                    } else {
+                        if (!ProxySetting.getServer().equalsIgnoreCase(server) || ProxySetting.getPort() != port) {
+                            String msg = "Changed SOCKS5 from " + ProxySetting.getServer() + ":" + ProxySetting.getPort() + " to " + server + ":" + port;
+                            RecentSettingsList.addRecent(new RecentSetting(msg, "Proxy"));
+                            System.out.println(msg);
+                        }
+                    }
 
-                    ProxyIO.writeFile(Setting.getProxyData());
+                    
+                    ProxySetting.setServer(server);
+                    ProxySetting.setPort(port);
+                    ProxySetting.setIsEnable(true);
 
                     this.dispose();
                 } catch (NumberFormatException en) {
@@ -142,8 +180,7 @@ public class ProxySettingDialog extends JDialog implements ActionListener, KeyLi
 
         if (e.getSource() == okButton) {
             saveSetting();
-        }
-        if (e.getSource() == cancelButton) {
+        } else if (e.getSource() == cancelButton) {
             this.dispose();
         }
     }

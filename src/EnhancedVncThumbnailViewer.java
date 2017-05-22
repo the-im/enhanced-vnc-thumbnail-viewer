@@ -32,23 +32,29 @@
  * --------------------------------------------------------------------
  * Abbreviation of Enhanced VNC Thumbnail Viewer is evnctv ***
  * 
- * Enhanced VNC Thumbnail Viewer 1.001
- *      - Added slide show feature by default delay is 4 seconds
- *      - Added loop pagination feature
- *      - Added evnctv's icon on title bar of window and application
- *      - Fixed disconnect button, make it's available since start connect 
- *      - Added Setting class for call all setting in project
- *      - Added IO class of each setting for read & write file
+ * Enhanced VNC Thumbnail Viewer 1.002
+ *  - Added remember username option
+ *  - Added 10 recent configurations list feature
+ *  - Moved all settings into host list file
+ *  - Fixed re-order when solo host is closed
  * 
- * Enhanced VNC Thumbnail Viewer 1.0
- *      - Change UI from awt to swing
- *      - New classes -> LoginDialog, LoginSettingDialog, LoginData, ProxySettingDialog, AboutDialog, ProxyData, SearchList
- *      - SOCKS5 is available
- *      - Display most 4 viewers per page
- *      - Search for viewer that you want
- *      - Login on start up program
- *      - Reconnect is available
- *      - Display computer name
+ * Enhanced VNC Thumbnail Viewer 1.001
+ *  - Added slide show feature by default delay is 4 seconds
+ *  - Added loop pagination feature
+ *  - Added evnctv's icon on title bar of window and application
+ *  - Fixed disconnect button, make it's available since start connect 
+ *  - Added Settings class for call all setting in project
+ *  - Added IO class of each setting for read & write file
+ * 
+ * Enhanced VNC Thumbnail Viewer 1.000
+ *  - Change UI from awt to swing
+ *  - New classes -> LoginDialog, LoginSettingDialog, LoginData, ProxySettingDialog, AboutDialog, ProxyData, SearchList
+ *  - SOCKS5 is available
+ *  - Display most 4 viewers per page
+ *  - Search for viewer that you want
+ *  - Login on start up program
+ *  - Reconnect is available
+ *  - Display computer name
  */
 import java.awt.*;
 import java.awt.event.*;
@@ -111,35 +117,37 @@ public class EnhancedVncThumbnailViewer extends Frame
         }
 
     }
-    //
-    // Modified on Enhanced VNC Thumbnail Viewer 1.0 ***
-    // Change version display from Float to String because it's available to show sub-version such as 1.0.1
-    //
-    final static String VERSION = "1.001";
+
+    final static String VERSION = "1.002";
     final static String PROGRAM_NAME = "Enhanced VNC Thumbnail Viewer";
     VncViewersList viewersList, viewersSearchList;
-    AddHostDialog hostDialog;
     MenuItem newhostMenuItem, loadhostsMenuItem, savehostsMenuItem, exitMenuItem;
     Frame soloViewer;
     int widthPerThumbnail, heightPerThumbnail;
     int thumbnailRowCount;
-    // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
+    
+    // Added on evnctv 1.000
     LoginDialog loginDialog;
     SearchList searchList;
     Pagination pagination;
     JButton nextButton, previousButton, searchButton, cancelSearchButton;
     JPanel naviPanel, viewerPanel, naviCenterPanel, naviRightPanel;
-    MenuItem proxyMenuItem, loginMenuItem, aboutMenuItem;
+    MenuItem aboutMenuItem;
     JTextField searchField;
     boolean isSearch = false;
-    // Added on evnctv 1.001 ***
+    
+    // Added on evnctv 1.001
     boolean isNext = true;
     boolean isPrevious = false;
     boolean isSlideShow = false;
     JButton slideShowButton;
-    MenuItem slideShowMenuItem;
     JPanel naviLeftPanel;
-
+    
+    // Added on evnctv 1.002
+    MenuItem recentSettingsShowMenuItem;
+    MenuItem optionsMenuItem;
+    int soloOrder;
+    
     EnhancedVncThumbnailViewer() {
         PlatformUI.getLookAndFeel();
 
@@ -160,8 +168,8 @@ public class EnhancedVncThumbnailViewer extends Frame
         setMenuBar(new MenuBar());
         getMenuBar().add(createFileMenu());
 
-        // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
-        getMenuBar().add(createSettingsMenu());
+        // Added on evnctv 1.000
+        getMenuBar().add(createToolsMenu()); // Modified on evnctv 1.002
         getMenuBar().add(createAboutMenu());
 
         naviPanel = new JPanel(new GridLayout(1, 2));
@@ -232,9 +240,9 @@ public class EnhancedVncThumbnailViewer extends Frame
         setVisible(true);
 
         // Check log in on start up
-        if (Setting.getLoginData().getIsAuth()) {
+        /*if (Settings.getLoginData().getIsAuth()) {
             new LoginDialog(this);
-        }
+        }*/
 
 
         soloViewer = new Frame();
@@ -244,26 +252,22 @@ public class EnhancedVncThumbnailViewer extends Frame
         soloViewer.addComponentListener(this);
         soloViewer.validate();
 
-
         /*
-         * Added on evnctv 1.001 ***
-         * To support slide show
+         * Added on evnctv 1.001
+         *  - To support slide show
          */
 
         while (true) {
             if (pagination.isEmpty()) {
                 try {
                     Thread.sleep(2000);
-                } catch (InterruptedException ex) {
-                }
+                } catch (InterruptedException ex) {}
             } else {
                 try {
-                    Thread.sleep(Setting.getSlideShowData().getDelay() * 1000);
-                } catch (InterruptedException ex) {
-                }
+                    Thread.sleep(SlideshowSetting.getDelay() * 1000);
+                } catch (InterruptedException ex) {}
 
                 if (!pagination.isEmpty() && isSlideShow) {
-
                     if (isPrevious) {
                         showPreviousNextPage(pagination.previous());
                     } else {
@@ -295,10 +299,23 @@ public class EnhancedVncThumbnailViewer extends Frame
     add(v);
     validate();
     }*/
-    //
-    // Modified on Enhanced VNC Thumbnail Viewer 1.0 ***
-    //
+    
+    /* *
+     * Modified on evnctv 1.000, 1.002
+     */
     void addViewer(VncViewer v) {
+        addViewerToPanel(v, -1);
+    }
+
+    void addViewer(VncViewer v, int order) {
+        addViewerToPanel(v, order);
+    }
+    
+    /* *
+     * Added on evnc 1.002
+     *  - Reduced duplicate codes in addViewer() method
+     */
+    private void addViewerToPanel(VncViewer v, int order) {
         // Initial var r to choose a size for viewer 
         int r;
         if (pagination.isLimited()) {
@@ -318,46 +335,20 @@ public class EnhancedVncThumbnailViewer extends Frame
         }
 
         if (viewerPanel.getComponentCount() < Pagination.thumbsnailPerPage) {
-            viewerPanel.add(v);
-            validate();
-        } else {
-            //v.disconnect();
-        }
-
-
-        enableNaviButton();
-    }
-
-    void addViewer(VncViewer v, int index) {
-        // Initial var r to choose a size for viewer 
-        int r;
-        if (pagination.isLimited()) {
-            r = (int) Math.sqrt(Pagination.thumbsnailPerPage - 1) + 1;
-        } else {
-            if (isSearch) {
-                r = (int) Math.sqrt(viewersSearchList.size() - 1) + 1;
+            // -1 for no order
+            if (order == -1) {
+                viewerPanel.add(v);
             } else {
-                r = (int) Math.sqrt(viewersList.size() - 1) + 1;
+                viewerPanel.add(v, order);
             }
-        }
-
-        if (r != thumbnailRowCount) {
-            thumbnailRowCount = r;
-            ((GridLayout) viewerPanel.getLayout()).setRows(thumbnailRowCount);
-            resizeThumbnails();
-        }
-
-        if (viewerPanel.getComponentCount() < Pagination.thumbsnailPerPage) {
-            viewerPanel.add(v, index);
             validate();
         } else {
             //v.disconnect();
         }
 
-
         enableNaviButton();
     }
-
+    
     //
     // New method ***
     // When reconnect or next/previous page, this method will be called
@@ -399,9 +390,8 @@ public class EnhancedVncThumbnailViewer extends Frame
     resizeThumbnails();
     }
     }*/
-    //
-    // Modified on Enhanced VNC Thumbnail Viewer 1.0 ***
-    //
+
+    // Modified on evnctv 1.000
     void removeViewer(VncViewer v) {
         viewersList.remove(v);
         viewerPanel.remove(v);
@@ -436,10 +426,9 @@ public class EnhancedVncThumbnailViewer extends Frame
         }
 
         soloViewer.setVisible(true);
-        //soloViewer.setTitle(v.host);
-        soloViewer.setTitle(v.compname + " (" + v.host + ":" + v.port + ")"); // Modified on version 1.0 - Enhanced VNC Thumbnail Viewer ***
-        //this.remove(v);
-        viewerPanel.remove(v); // Modified on Enhanced VNC Thumbnail Viewer 1.0 ***
+        soloViewer.setTitle(v.compname + " (" + v.host + ":" + v.port + ")"); // Modified on evnctv 1.000
+        
+        viewerPanel.remove(v); // Modified on evnctv 1.000
         soloViewer.add(v);
         v.vc.removeMouseListener(this);
         this.validate();
@@ -456,7 +445,7 @@ public class EnhancedVncThumbnailViewer extends Frame
         v.enableInput(false);
         updateCanvasScaling(v, widthPerThumbnail, heightPerThumbnail);
         soloViewer.removeAll();
-        addViewer(v);
+        addViewer(v, soloOrder);
         v.vc.addMouseListener(this);
         soloViewer.setVisible(false);
     }
@@ -478,7 +467,7 @@ public class EnhancedVncThumbnailViewer extends Frame
         //v.vc.scaledWidth = (fbWidth * sf + 50) / 100;
         //v.vc.scaledHeight = (fbHeight * sf + 50) / 100;
 
-        // Modified on Enhanced VNC Thumbnail Viewer 1.0 ***
+        // Modified on evnctv 1.000
         v.vc.scaledWidth = (fbWidth * sf + 50) / 100 - 20;
         v.vc.scaledHeight = (fbHeight * sf + 50) / 100 - 20;
 
@@ -510,9 +499,8 @@ public class EnhancedVncThumbnailViewer extends Frame
     }
     
     }*/
-    //
-    // Modified on Enhanced VNC Thumbnail Viewer 1.0 ***
-    //
+
+    // Modified on evnctv 1.000
     void resizeThumbnails() {
         int newWidth = getWidthNoInsets(this) / thumbnailRowCount;
         int newHeight = getHeightNoInsets(this) / thumbnailRowCount;
@@ -557,16 +545,16 @@ public class EnhancedVncThumbnailViewer extends Frame
                 //ask about encrypting
                 HostsFilePasswordDialog pd = new HostsFilePasswordDialog(this, true);
                 if (pd.getResult()) {
-                    viewersList.saveToEncryptedFile(dir + file, pd.getPassword());
+                    FileManager.saveEncryptedFile(dir + file, pd.getPassword(), viewersList);
                 } else {
-                    viewersList.saveToFile(dir + file);
+                    FileManager.saveFile(dir + file, viewersList);
                 }
             } else {
-                if (VncViewersList.isHostsFileEncrypted(dir + file)) {
+                if (FileManager.isHostsFileEncrypted(dir + file)) {
                     HostsFilePasswordDialog pd = new HostsFilePasswordDialog(this, false);
-                    viewersList.loadHosts(dir + file, pd.getPassword());
+                    FileManager.loadFile(dir + file, pd.getPassword(), viewersList);
                 } else {
-                    viewersList.loadHosts(dir + file, "");
+                    FileManager.loadFile(dir + file, "", viewersList);
                 }
             }
         }
@@ -600,8 +588,8 @@ public class EnhancedVncThumbnailViewer extends Frame
     private Menu createFileMenu() {
         Menu fileMenu = new Menu("File");
         newhostMenuItem = new MenuItem("Add New Host");
-        loadhostsMenuItem = new MenuItem("Load List of Hosts");
-        savehostsMenuItem = new MenuItem("Save List of Hosts");
+        loadhostsMenuItem = new MenuItem("Open..."); // Modified on evnctv 1.002
+        savehostsMenuItem = new MenuItem("Save..."); // Modified on evnctv 1.002
         exitMenuItem = new MenuItem("Exit");
 
         newhostMenuItem.addActionListener(this);
@@ -622,26 +610,24 @@ public class EnhancedVncThumbnailViewer extends Frame
         return fileMenu;
     }
 
-    //
-    // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
-    //
-    private Menu createSettingsMenu() {
-        Menu settingsMenu = new Menu("Settings");
-        proxyMenuItem = new MenuItem("Proxy");
-        loginMenuItem = new MenuItem("Login");
-        slideShowMenuItem = new MenuItem("Slide show"); // Added on evnctv 1.001 ***
+    /* *
+     * Modified on evnctv 1.002
+     * Added on evnctv 1.000
+     */
+    private Menu createToolsMenu() {
+        Menu toolsMenu = new Menu("Tools");
 
-        proxyMenuItem.addActionListener(this);
-        loginMenuItem.addActionListener(this);
-        slideShowMenuItem.addActionListener(this); // Added on evnctv 1.001 ***
+        recentSettingsShowMenuItem = new MenuItem("Recent Settings");
+        optionsMenuItem = new MenuItem("Options");
 
-        settingsMenu.add(slideShowMenuItem); // Added on evnctv 1.001 ***
-        settingsMenu.addSeparator();
-        settingsMenu.add(proxyMenuItem);
-        settingsMenu.addSeparator();
-        settingsMenu.add(loginMenuItem);
+        recentSettingsShowMenuItem.addActionListener(this);
+        optionsMenuItem.addActionListener(this);
 
-        return settingsMenu;
+        toolsMenu.add(recentSettingsShowMenuItem);
+        toolsMenu.addSeparator();
+        toolsMenu.add(optionsMenuItem);
+
+        return toolsMenu;
     }
 
     private Menu createAboutMenu() {
@@ -709,7 +695,14 @@ public class EnhancedVncThumbnailViewer extends Frame
         if (evt.getClickCount() == 2) {
             Component c = evt.getComponent();
             if (c instanceof VncCanvas) {
-                soloHost(((VncCanvas) c).viewer);
+                /* *
+                 * Added on evnctv1.002
+                 *  - To get order of viewer
+                 */
+                VncViewer v = ((VncCanvas) c).viewer;
+                soloOrder = viewerPanel.getComponentZOrder(v);
+        
+                soloHost(v);
             }
         }
 
@@ -773,53 +766,45 @@ public class EnhancedVncThumbnailViewer extends Frame
         viewersList.remove(v);
         }*/
 
-        // Modified on evnctv 1.0, 1.001
+        // Modified on evnctv 1.000, 1.001
         if (evt.getSource() instanceof Button) {
             Button b = (Button) evt.getSource();
             VncViewer v = (VncViewer) ((Component) ((Component) evt.getSource()).getParent()).getParent();
+
             if (b.getLabel().equals("Reconnect")) {
-                int index = viewerPanel.getComponentZOrder(v);
+                int order = viewerPanel.getComponentZOrder(v);
                 viewerPanel.remove(v);
-                v = viewersList.launchViewerReconnect(v.host, v.port, v.passwordParam, v.usernameParam, v.userdomain, v.compname, index);
+                viewersList.launchViewerReconnect(v.host, v.port, v.passwordParam, v.usernameParam, v.userdomain, v.compname, order);
             } else if (b.getLabel().equals("Disconnect")) {
                 v.disconnect();
             }
         }
 
         if (evt.getSource() == newhostMenuItem) {
-            hostDialog = new AddHostDialog(this);
+            new AddHostDialog(this);
         }
         if (evt.getSource() == savehostsMenuItem) {
             loadsaveHosts(FileDialog.SAVE);
         }
         if (evt.getSource() == loadhostsMenuItem) {
             loadsaveHosts(FileDialog.LOAD);
+            
+            if (LoginSetting.getIsEnable()) {
+                new LoginDialog(this);
+            }
         }
         if (evt.getSource() == exitMenuItem) {
             quit();
         }
 
 
-        //
-        // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
-        //
+        // Added on evnctv 1.000
     /*if(evt.getSource() instanceof Button && ((Button)evt.getSource()).getLabel() == "Remove") {
         VncViewer v = (VncViewer)((Component)((Component)evt.getSource()).getParent()).getParent();
         removeViewer(v);
         }*/
         if (evt.getSource() == aboutMenuItem) {
             new AboutDialog(this);
-        }
-
-        // Added on evnctv 1.001 ***
-        if (evt.getSource() == slideShowMenuItem) {
-            new SlideShowSettingDialog(this).setVisible(true);
-        }
-        if (evt.getSource() == proxyMenuItem) {
-            new ProxySettingDialog(this).setVisible(true);
-        }
-        if (evt.getSource() == loginMenuItem) {
-            new LoginSettingDialog(this).setVisible(true);
         }
         if (evt.getSource() == cancelSearchButton) {
             isSearch = false;
@@ -841,7 +826,6 @@ public class EnhancedVncThumbnailViewer extends Frame
         if (evt.getSource() == searchButton) {
             searchViewer();
         }
-        // Modified on evnctv 1.001
         if (evt.getSource() == previousButton) {
             isPrevious = true;
             isNext = false;
@@ -852,6 +836,7 @@ public class EnhancedVncThumbnailViewer extends Frame
             isNext = true;
             showPreviousNextPage(pagination.next());
         }
+        
         // Added on evnctv 1.001
         if (evt.getSource() == slideShowButton) {
             if (isSlideShow) {
@@ -864,6 +849,15 @@ public class EnhancedVncThumbnailViewer extends Frame
 
             enableNaviButton();
         }
+        
+        // Added on evnctv 1.002
+        if (evt.getSource() == recentSettingsShowMenuItem) {
+            new RecentSettingsShowDialog(this);
+        }
+        if (evt.getSource() == optionsMenuItem) {
+            new OptionsDialog(this);
+        }
+        
     }
 
     // Added on evnctv 1.001
@@ -883,8 +877,8 @@ public class EnhancedVncThumbnailViewer extends Frame
     }
 
     //
-    // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
-    // Enable/disable button on navigator panel
+    // Added on evnctv 1.000
+    //  - Enable/disable button on navigator panel
     //
     private void enableNaviButton() {
         /**if (pagination.hasNext()) {
@@ -936,8 +930,8 @@ public class EnhancedVncThumbnailViewer extends Frame
     }
 
     //
-    // Added on Enhanced VNC Thumbnail Viewer 1.0 ***
-    // Disconnect and remove all viewers on each page
+    // Added on evnctv 1.000
+    //  - Disconnect and remove all viewers on each page
     //
     private void clearViewersOnPage() {
         VncViewer v;
@@ -948,9 +942,9 @@ public class EnhancedVncThumbnailViewer extends Frame
         viewerPanel.removeAll();
     }
 
-    /*
+    /* *
      * Added on evnctv 1.001
-     * To show viewers when next/previous page is clicked
+     *  - To show viewers when next/previous page is clicked
      */
     private void showPreviousNextPage(Vector viewers) {
         clearViewersOnPage();
@@ -966,7 +960,7 @@ public class EnhancedVncThumbnailViewer extends Frame
         enableNaviButton();
     }
 
-    /*
+    /* *
      * Added on evnctv 1.001
      */
     private void searchViewer() {

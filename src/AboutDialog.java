@@ -1,54 +1,52 @@
-/*
- * Enhanced VNC Thumbnail Viewer 1.0
- * To access this dialog just going to Help -> About
- * This dialog will display version of this program 
+/* *
+ * Enhanced VNC Thumbnail Viewer 1.002
+ *  - Optimized code & re-comments
+ * 
+ * Enhanced VNC Thumbnail Viewer 1.000
+ *  To access this dialog just going to Help -> About
+ *  This dialog will display version of this program 
  */
 
 import java.awt.*;
 import java.awt.event.*;
-import java.io.*;
 import javax.swing.*;
 
 public class AboutDialog extends JDialog implements ActionListener{
     
-    EnhancedVncThumbnailViewer tnviewer;
-    JButton okButton;
-    JLabel programNameLabel, versionLabel;
+    private JButton okButton;
+    private JLabel programNameLabel, versionLabel;
     
     public AboutDialog(EnhancedVncThumbnailViewer tnviewer) {
         super(tnviewer, true);
-        this.tnviewer = tnviewer;
 
-        // GUI Stuff:
-        setResizable(false);
-        GridBagLayout gridbag = new GridBagLayout();
-        GridBagConstraints c = new GridBagConstraints();
-        setLayout(gridbag);
-
+        // Initial components
         programNameLabel = new JLabel(EnhancedVncThumbnailViewer.PROGRAM_NAME);
         versionLabel = new JLabel("Version "+ EnhancedVncThumbnailViewer.VERSION);
+        
         okButton = new JButton("OK");
+        okButton.addActionListener(this);
         
         programNameLabel.setFont(new Font("Helvetica", Font.BOLD, 12));
         versionLabel.setFont(new Font("Helvetica", Font.PLAIN, 12));
         
-        ButtonGroup proxyGroup = new ButtonGroup();
-        proxyGroup.add(okButton);
-
-        okButton.addActionListener(this);
-
+        // Layout
+        GridBagConstraints c = new GridBagConstraints();
         c.gridwidth = GridBagConstraints.REMAINDER;
-
+        
+        GridBagLayout gridbag = new GridBagLayout();
+        setLayout(gridbag);
         gridbag.setConstraints(programNameLabel, c);
         c.ipady = 20;
         gridbag.setConstraints(versionLabel, c);
         c.ipady = 0;
         gridbag.setConstraints(okButton, c);
 
+        // Add to dialog
         add(programNameLabel);
         add(versionLabel);
         add(okButton);
 
+        // Dialog
         Point loc = tnviewer.getLocation();
         Dimension dim = tnviewer.getSize();
         loc.x += (dim.width / 2) - 50;
@@ -58,6 +56,7 @@ public class AboutDialog extends JDialog implements ActionListener{
         setTitle("About");
         setSize(250,120);
         validate();
+        setResizable(false);
         setVisible(true);
     }
 

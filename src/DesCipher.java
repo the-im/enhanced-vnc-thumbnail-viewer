@@ -1,3 +1,8 @@
+/* *
+ * Enhanced VNC Thumbnail Viewer 1.002
+ *  - Fixed decrypted code on return of decryptData() method
+ */
+
 //
 // This DES class has been extracted from package Acme.Crypto for use in VNC.
 // The bytebit[] array has been reversed so that the most significant bit
@@ -307,7 +312,11 @@ public class DesCipher
       des.decrypt(msg, i*8, msg, i*8);
     }
 
-    return new String(msg);
+    /* *
+     * Modified on evnctv 1.002
+     *  To trim decrypted code
+     */
+    return new String(msg).trim();
   }
   
     // The DES function.

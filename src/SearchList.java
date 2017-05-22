@@ -1,5 +1,5 @@
-/*
- * Enhanced VNC Thumbnail Viewer 1.0
+/* *
+ * Enhanced VNC Thumbnail Viewer 1.000
  * Class for searching viewers in list
  */
 
@@ -19,7 +19,7 @@ class SearchList{
         else{
             viewersSearchList.clear();
             VncViewer v;
-            for(int i=0; i<viewersList.size(); i++){
+            for(int i = 0; i < viewersList.size(); i++){
                 v = (VncViewer) viewersList.get(i);
                 if(v.compname.contains(searchText)){
                     viewersSearchList.add(v);
